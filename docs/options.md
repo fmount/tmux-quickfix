@@ -7,7 +7,7 @@ environment, or you can simply overwrite these parameters inside the active tmux
 
     set -g @quickfix-perc-size '20'
 
-> Can I have the sidebar on the top?
+> Can I have the quickfix on the top?
 
     set -g @quickfix-position 'top'
 
