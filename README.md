@@ -8,7 +8,8 @@ This plugin allow tmux to have an hidden pane on the current session and use it 
 My final goal is to enable tmux to run Async jobs and execute them into the quickfix hidden pane.
 
 
-###Configurable parameters
+Configurable parameters
+---
 
 | Parameter | Default Value | Description |
 |-----------|---------------|-------------|
@@ -22,7 +23,8 @@ My final goal is to enable tmux to run Async jobs and execute them into the quic
 - [customization options](docs/options.md)
 
 
-###Manual install
+Manual install
+---
 
 Clone the repo:
 
@@ -40,7 +42,8 @@ Reload TMUX environment:
 You should now be able to use the plugin.
 
 
-###WORK IN PROGRESS...
+WORK IN PROGRESS...
+----
 
 Next steps:
 
