@@ -19,7 +19,6 @@ register_qfix_options() {
 	
 	local quickfix_command="$SCRIPTS_DIR/quickfix.sh"
 	local quickfix_key="$QUICKFIX_DEFAULT_KEY"
-	local session="$(get_current_session)"
 
 	for option in "${META_OPTIONS[@]}"; do
 		key="${option%%:*}"

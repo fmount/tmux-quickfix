@@ -56,6 +56,11 @@ get_pane_info() {
 		cut -d',' -f2-
 }
 
+get_window_info() {
+	local win_index="$1"
+	tmux list-windows -F '#{window_index}:#{window_id}:#{pane_id}' | grep "$win_index"
+}
+
 
 command_exists() {
 	local command="$1"
