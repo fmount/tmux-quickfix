@@ -62,6 +62,46 @@ get_window_info() {
 }
 
 
+get_qfix_info() {
+	local quickfix_info
+	quickfix_info="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}")"
+	
+	echo "$quickfix_info"
+}
+
+get_qfix_id_by() {
+	local id
+	ch=$1
+	case ${ch} in
+		pane_id)
+			id=$(get_qfix_info | cut -d ':' -f3)
+			echo "$id"
+			;;
+		win_id)
+			id=$(get_qfix_info | cut -d ':' -f2)
+			echo "$id"
+			;;
+		win_index)
+			index=$(get_qfix_info | cut -d ':' -f1)
+			echo "$index"
+			;;
+		default)
+			index=${QUICKFIX_DEFAULT_WIN_INDEX}
+			echo "$index"
+			;;
+	esac
+}
+
+
+quickfix_join_pane() {
+	
+	size="$1"
+	
+	[ -n "$size" ] && size="${QUICKFIX_DEFAULT_PERC_SIZE}"
+	
+	tmux join-pane -l "${size}" -s "$(get_qfix_id_by 'pane_id')"
+}
+
 command_exists() {
 	local command="$1"
 	type "$command" >/dev/null 2>&1
