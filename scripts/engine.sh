@@ -1,7 +1,8 @@
 get_tmux_option() {
 	local option=$1
 	local default_value=$2
-	local option_value=$(tmux show-option -gqv "$option")
+	#local option_value=$(tmux show-option -sqv "$option")
+	local option_value=$(tmux show-option -qv "$option")
 	if [ -z "$option_value" ]; then
 		echo "$default_value"
 	else
@@ -14,19 +15,22 @@ set_tmux_id() {
 	local option=$1
 	local value
 	value=$(echo "$2" | sed 's/ /_/g' | cut -d '_' -f1)
-	tmux set-option -g "$option" "$value"
+	#tmux set-option -sq "$option" "$value"
+	tmux set-option -q "$option" "$value"
 }
 
 
 set_tmux_option() {
 	local option=$1
 	local value=$2
-	tmux set-option -gq "$option" "$value"
+	local session=$3
+	#tmux set-option -sq  -t "$session" "$option" "$value"
+	tmux set-option -q  -t "$session" "$option" "$value"
 }
 
 
 stored_key_vars() {
-	tmux show-options -g |
+	tmux show-options -s |
 		\grep -i "^${VAR_KEY_PREFIX}-" |
 		cut -d ' ' -f1 |               # cut just the variable names
 		xargs                          # splat var names in one line

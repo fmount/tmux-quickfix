@@ -4,6 +4,7 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 source "$CURRENT_DIR/engine.sh"
 source "$CURRENT_DIR/variables.sh"
+source "$CURRENT_DIR/session.sh"
 
 PANE_CURRENT_PATH="$(pwd)"
 PANE_ID=""
@@ -51,7 +52,8 @@ quickfix_exists() {
 
 register_quickfix() {
 	local quickfix_info="$1"
-	set_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "${quickfix_info}"
+	local session="$(get_current_session)"
+	set_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "${quickfix_info}" "${session}"
 }
 
 
@@ -72,8 +74,8 @@ split_qfix() {
 	
 	case $1 in
 		"bottom")
-			#qfix="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
-			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "${QUICKFIX_FORMAT}")"
+			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
+			#info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "${QUICKFIX_FORMAT}")"
 			pane_id=$(echo "$info" | cut -d ':' -f3)
 			tmux select-window -l
 			tmux join-pane -v -l "$qfix_size" -s "$pane_id"
@@ -83,8 +85,8 @@ split_qfix() {
 			;;
 
 		"top")
-			#qfix="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
-			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "${QUICKFIX_FORMAT}")"
+			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
+			#info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "${QUICKFIX_FORMAT}")"
 			pane_id=$(echo "$info" | cut -d ':' -f3)
 			tmux select-window -l
 			tmux join-pane -v -l "$qfix_size" -s "$pane_id"
@@ -118,7 +120,7 @@ send_back() {
 	## The adopted method is to use the window ID to set its status format
 	## to an empty string: in this way we hide the quickfix
 	
-	tmux set-window-option -t $(get_qfix_id_by 'win_index') window-status-format ""
+	tmux set-window-option -t "$(get_qfix_id_by 'win_index')" window-status-format ""
 }
 
 
@@ -127,8 +129,8 @@ send_front(){
 	size=$(get_tmux_option "${QUICKFIX_PERC_OPTION}")
 	
 	[ -n "$size" ] && size="${QUICKFIX_DEFAULT_PERC_SIZE}"
+	
 	tmux join-pane -l "${size}" -s "$(get_qfix_id_by 'pane_id')"
-	#tmux send-key Enter
 }
 
 

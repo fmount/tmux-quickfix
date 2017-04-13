@@ -5,6 +5,7 @@ SCRIPTS_DIR="$CURRENT_DIR/scripts"
 
 source "$SCRIPTS_DIR/engine.sh"
 source "$SCRIPTS_DIR/variables.sh"
+source "$SCRIPT_DIR/session.sh"
 
 META_OPTIONS=(
 	"${QUICKFIX_KEY_PREFIX}":"${QUICKFIX_DEFAULT_KEY}"
@@ -18,6 +19,7 @@ register_qfix_options() {
 	
 	local quickfix_command="$SCRIPTS_DIR/quickfix.sh"
 	local quickfix_key="$QUICKFIX_DEFAULT_KEY"
+	local session="$(get_current_session)"
 
 	for option in "${META_OPTIONS[@]}"; do
 		key="${option%%:*}"
