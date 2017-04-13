@@ -7,13 +7,38 @@ source "$CURRENT_DIR/variables.sh"
 
 PANE_CURRENT_PATH="$(pwd)"
 PANE_ID=""
+QUICKFIX_FORMAT="#{window_index}:#{window_id}:#{pane_id}"
 
 
-get_qfix_pane_id() {
-	local pane_id
-	pane_id="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}")"
+# TODO: 
+# 1) Register metadata inside the session and NOT GLOBALLY! FUCK
+# 2) Make the quickfix window not selectable with <leader> <win_index>
+#	|=> Strategy: consider to assign a specifix number
+
+get_qfix_info() {
+	local quickfix_info
+	quickfix_info="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}")"
 	
-	echo "$pane_id"
+	echo "$quickfix_info"
+}
+
+get_qfix_id_by() {
+	local id
+	criteria=$1
+	case ${criteria} in
+		pane_id)
+			id=$(get_qfix_info | cut -d ':' -f3)
+			echo "$id"
+			;;
+		win_id)
+			id=$(get_qfix_info | cut -d ':' -f2)
+			echo "$id"
+			;;
+		win_index)
+			index=$(get_qfix_info | cut -d ':' -f1)
+			echo "$index"
+			;;
+	esac
 }
 
 
@@ -35,7 +60,7 @@ join_quick() {
 	local main_pane_id
 	main_pane_id="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "${PANE_ID}" "")" 
 	# execute the same command as if from the "main" pane
-	"$CURRENT_DIR"/toggle.sh
+	"$CURRENT_DIR"/quickfix.sh
 }
 
 
@@ -47,21 +72,25 @@ split_qfix() {
 	
 	case $1 in
 		"bottom")
-			qfix="$(tmux new-window -c "$PANE_CURRENT_PATH" -P -F "#{pane_id}")"
+			#qfix="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
+			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "${QUICKFIX_FORMAT}")"
+			pane_id=$(echo "$info" | cut -d ':' -f3)
 			tmux select-window -l
-			tmux join-pane -v -l "$qfix_size" -s "$qfix"
+			tmux join-pane -v -l "$qfix_size" -s "$pane_id"
 			
 			#we need to register this qfix_id to the option world of tmux
-			echo "$qfix"
+			echo "$info"
 			;;
 
 		"top")
-			qfix="$(tmux new-window -c "$PANE_CURRENT_PATH" -P -F "#{pane_id}")"
+			#qfix="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
+			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "${QUICKFIX_FORMAT}")"
+			pane_id=$(echo "$info" | cut -d ':' -f3)
 			tmux select-window -l
-			tmux join-pane -v -l "$qfix_size" -s "$qfix"
+			tmux join-pane -v -l "$qfix_size" -s "$pane_id"
 			
 			#we need to register this qfix_id to the option world of tmux
-			echo "$qfix"
+			echo "$info"
 			;;
 	esac
 }
@@ -69,23 +98,27 @@ split_qfix() {
 
 create_quickfix	() {
 	local position="$1" # top / bottom
-	local quickfix_id
-	quickfix_id="$(split_qfix "${position}")"
-	register_quickfix "$quickfix_id"
-	#Check the focus..
+	local quickfix_meta
+	quickfix_meta="$(split_qfix "${position}")"
+	register_quickfix "$quickfix_meta"
 }
 
 
 quickfix_is_fore() {
 	local fore
-	fore="$(tmux list-panes -F "#{pane_id}" 2>/dev/null | grep "$(get_qfix_pane_id)")"
+	fore="$(tmux list-panes -F "#{pane_id}" 2>/dev/null | grep "$(get_qfix_id_by 'pane_id')")"
 	[ -n "$fore" ]
 }
 
 
 send_back() {
 	#echo "send back"
-	tmux break-pane -d -s "$(get_qfix_pane_id)"
+	tmux break-pane -d -s "$(get_qfix_id_by 'pane_id')"
+	
+	## The adopted method is to use the window ID to set its status format
+	## to an empty string: in this way we hide the quickfix
+	
+	tmux set-window-option -t $(get_qfix_id_by 'win_index') window-status-format ""
 }
 
 
@@ -94,8 +127,8 @@ send_front(){
 	size=$(get_tmux_option "${QUICKFIX_PERC_OPTION}")
 	
 	[ -n "$size" ] && size="${QUICKFIX_DEFAULT_PERC_SIZE}"
-	tmux join-pane -l "${size}" -s "$(get_qfix_pane_id)"
-	tmux send-key Enter
+	tmux join-pane -l "${size}" -s "$(get_qfix_id_by 'pane_id')"
+	#tmux send-key Enter
 }
 
 
