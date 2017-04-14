@@ -131,6 +131,7 @@ send_back() {
 	quick_meta="$(get_window_info "${win_index}")"
 	update_quickfix_meta "$quick_meta"
 	
+	echo "$(check_process)"
 	#kill_quickfix "pane"
 }
 

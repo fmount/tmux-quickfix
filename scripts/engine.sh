@@ -148,3 +148,26 @@ quickfix_command() {
 		echo "$custom_quickfix_command"
 	fi
 }
+
+check_process() {
+
+	local session
+	session="$(get_target_session)"
+	pane="$(get_qfix_id_by 'pane_id')"
+	pid=$(tmux list-panes -s -F '#{pane_id}:#{pane_pid}' -t "$session" | grep "$pane" | cut -d ':' -f2)
+	if [ ! -z "$pid" ]; then
+		echo "WE HAVE A PROCESS "$pid, "SEND THE WINDOW IN BG"
+	fi
+	echo "WE DON'T HAVE A PROCESS, CAN KILL THE PANE"
+}
+
+quick_process_tree() {
+	local s
+	s=$(get_target_session)	
+#for s in $(tmux list-sessions -F '#{session_name}') ; do
+	echo -e "\ntmux session name: $s\n--------------------"
+	for p in $(tmux list-panes -s -F '#{pane_pid}' -t "$s") ; do
+		pstree -p -a -A "$p"
+	done
+#done	
+}
