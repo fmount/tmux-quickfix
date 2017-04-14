@@ -29,12 +29,11 @@ set_tmux_option() {
 }
 
 
-stored_key_vars() {
-	tmux show-options -s |
-		\grep -i "^${VAR_KEY_PREFIX}-" |
-		cut -d ' ' -f1 |               # cut just the variable names
-		xargs                          # splat var names in one line
+unset_tmux_option() {
+	local option_name=$1
+	tmux set-option -u "$option_name"
 }
+
 
 # get the key from the variable name
 get_key_from_option_name() {

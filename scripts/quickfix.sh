@@ -11,6 +11,7 @@ PANE_CURRENT_PATH="$(pwd)"
 
 quickfix_exists() {
 	local var
+	local index
 	var="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "")"
 	[ -n "$var" ]
 }
@@ -30,6 +31,13 @@ register_quickfix() {
 
 	quickfix_info="${quickfix_designed_index}:@-1:${quickfix_pane_id}"
 	set_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "${quickfix_info}" "${session}"
+}
+
+
+unregister_quickfix() {
+	for element in $(tmux show-options -q | grep quickfix | cut -d " " -f1); do 
+		unset_tmux_option "$element"
+	done	
 }
 
 
@@ -67,7 +75,7 @@ split_qfix() {
 			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
 			pane_id=$(echo "$info" | cut -d ':' -f3)
 			tmux select-window -l
-			tmux join-pane -v -l "$qfix_size" -s "$pane_id"
+			tmux join-pane -v -lb "$qfix_size" -s "$pane_id"
 			
 			#we need to register this qfix_id to the option world of tmux
 			echo "$info"
