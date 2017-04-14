@@ -35,9 +35,28 @@ register_quickfix() {
 
 
 unregister_quickfix() {
-	for element in $(tmux show-options -q | grep quickfix | cut -d " " -f1); do 
+	for element in $(tmux show-options -q | grep quickfix | cut -d " " -f1); do
 		unset_tmux_option "$element"
 	done	
+}
+
+
+# I can kill the pane when is in foreground, or kill the window
+# when the quickfix is in background, so this function accepts
+# pane/window as parameters
+
+kill_quickfix() {
+	target="$1"
+	if [ "$target" = "window" ]; then
+		quick_win_id="$(get_qfix_id_by 'win_id')"
+		echo "killing window: $quick_win_id"
+		kill_win "$quick_win_id"
+		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}"
+	elif [ "$target" = "pane" ]; then
+		quick_pan_id="$(get_qfix_id_by 'pane_id')"
+		kill_pan "$quick_pan_id"
+		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}"
+	fi
 }
 
 
@@ -112,6 +131,7 @@ send_back() {
 	quick_meta="$(get_window_info "${win_index}")"
 	update_quickfix_meta "$quick_meta"
 	
+	#kill_quickfix "pane"
 }
 
 

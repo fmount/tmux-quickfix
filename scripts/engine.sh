@@ -92,6 +92,17 @@ get_qfix_id_by() {
 }
 
 
+kill_win() {
+	win_id="$1"
+	tmux killw -t "${win_id}"
+}
+
+
+kill_pan() {
+	pan_id="$1"
+	tmux killp -t "${pan_id}"
+}
+
 quickfix_join_pane() {
 	
 	size="$1"
