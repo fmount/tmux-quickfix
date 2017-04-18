@@ -103,6 +103,8 @@ kill_pan() {
 	tmux killp -t "${pan_id}"
 }
 
+# Executed by the main bash when we need to put the quick
+# in FG. 
 quickfix_join_pane() {
 	
 	size="$1"
@@ -149,17 +151,24 @@ quickfix_command() {
 	fi
 }
 
+have_child() {
+	target_pid="$1"
+	PGREP=$(which pgrep)
+	pg="$("$PGREP" -P "$target_pid")"
+	echo "$pg"
+}
+
 check_process() {
 
 	local session
 	session="$(get_target_session)"
 	pane="$(get_qfix_id_by 'pane_id')"
-	pid=$(tmux list-panes -s -F '#{pane_id}:#{pane_pid}' -t "$session" | grep "$pane" | cut -d ':' -f2)
-	if [ ! -z "$pid" ]; then
-		echo "WE HAVE A PROCESS "$pid, "SEND THE WINDOW IN BG"
+	main_pid=$(tmux list-panes -s -F '#{pane_id}:#{pane_pid}' -t "$session" | grep "$pane" | cut -d ':' -f2)
+	if [ ! -z "$main_pid" ]; then
+		have_child "$main_pid"
 	fi
-	echo "WE DON'T HAVE A PROCESS, CAN KILL THE PANE"
 }
+
 
 quick_process_tree() {
 	local s

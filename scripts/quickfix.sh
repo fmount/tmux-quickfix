@@ -131,15 +131,29 @@ send_back() {
 	quick_meta="$(get_window_info "${win_index}")"
 	update_quickfix_meta "$quick_meta"
 	
-	echo "$(check_process)"
-	#kill_quickfix "pane"
+	if [ ! "$(check_process)" ]; then 
+		kill_quickfix "pane"
+	#else
+	#	echo "Cannot kill"
+	fi
 }
 
 
 send_front(){
 	#echo "send front"
 	size=$(get_tmux_option "${QUICKFIX_PERC_OPTION}")
-	quickfix_join_pane "$size"
+	local position="$1"
+	local mode="$2"
+	#Check if quickfix wrapper window isn't closed
+	quick_win="$(tmux list-windows -F "#{window_id}" 2>/dev/null | grep "$(get_qfix_id_by 'win_id')")"
+	
+	if [ -n "$quick_win" ]; then
+		quickfix_join_pane "$size"
+	else
+		# Cannot find quickfix win: update meta and redraw
+		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}"
+		create_quickfix "$position" "$mode" 
+	fi
 }
 
 
@@ -155,7 +169,7 @@ toggle_quickfix() {
 		if quickfix_is_fore; then
 			send_back
 		else
-			send_front
+			send_front "$position" "$mode"
 		fi
 	else
 		create_quickfix "$position" "$mode"
