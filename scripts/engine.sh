@@ -114,16 +114,6 @@ quickfix_join_pane() {
 	tmux join-pane -l "${size}" -s "$(get_qfix_id_by 'pane_id')"
 }
 
-command_exists() {
-	local command="$1"
-	type "$command" >/dev/null 2>&1
-}
-
-
-quickfix_user_command() {
-	get_tmux_option "$QUICKFIX_COMMAND_OPTION" ""
-}
-
 
 quickfix_key() {
 	get_tmux_option "$QFX_OPTION" "$QFX_KEY"
@@ -140,16 +130,54 @@ quickfix_height() {
 }
 
 
-quickfix_command() {
-	local user_command="$(quickfix_user_command)"
-	if [ -n "$user_command" ]; then
-		echo "$user_command"
-	elif command_exists "quickfix"; then
-		echo "$QUICKFIX_COMMAND"
+#command_exists() {
+#	local command="$1"
+#	type "$command" >/dev/null 2>&1
+#}
+
+
+#quickfix_user_command() {
+#	get_tmux_option "$QUICKFIX_COMMAND_OPTION" ""
+#}
+
+
+#quickfix_command() {
+#	local user_command="$(quickfix_user_command)"
+#	if [ -n "$user_command" ]; then
+#		echo "$user_command"
+#	fi
+#}
+
+
+quickfix_command_enqueue() {
+	echo "ENQUEUE"
+	cmd="$1"
+	queue="$(get_tmux_option "$QUICKFIX_COMMAND_QUEUE")"
+	if [ -n "$queue" ]; then
+		echo "$cmd" >> "${queue}"
 	else
-		echo "$custom_quickfix_command"
+		echo "$cmd" >> "${QUICKFIX_DEFAULT_CMD_QUEUE}"
 	fi
 }
+
+
+exec_cmd() {
+	local cmd
+	cmd="$1"
+	
+	#TODO: If no processes are executed inside the quickfix we can send this
+	qf="$(get_qfix_id_by 'pane_id')"
+	tmux send-keys -t "$qf" "'$cmd'" Enter
+}
+
+
+quickfix_cmd_dequeue() {
+	echo "DEQUEUE"
+	queue="$(get_tmux_option "$QUICKFIX_COMMAND_QUEUE")"
+	current=$(tail -n1 "$queue" && sed '$d' "$queue")
+	exec_cmd "$current"
+}
+
 
 have_child() {
 	target_pid="$1"
@@ -157,6 +185,7 @@ have_child() {
 	pg="$("$PGREP" -P "$target_pid")"
 	echo "$pg"
 }
+
 
 check_process() {
 

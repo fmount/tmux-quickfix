@@ -120,7 +120,6 @@ quickfix_is_fore() {
 
 
 send_back() {
-	#echo "send back"
 	win_index=$(get_qfix_id_by 'default')
 	tmux break-pane -d -t "${win_index}" -s "$(get_qfix_id_by 'pane_id')"
 	
@@ -140,7 +139,6 @@ send_back() {
 
 
 send_front(){
-	#echo "send front"
 	size=$(get_tmux_option "${QUICKFIX_PERC_OPTION}")
 	local position="$1"
 	local mode="$2"

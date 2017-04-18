@@ -17,7 +17,7 @@ Configurable parameters
 |QUICKFIX_DEFAULT_HEIGHT    | 30 | Default height of the quickfix pane |
 |QUICKFIX_DEFAULT_PER_SIZE  | 20 | Default perc size (it has more priority than height value) |
 |QUICKFIX_DEFAULT_POSITION  | bottom  | Default position: bottom/top are the only allowed values |
-|QUICKFIX_DEFAULT_COMMAND   | $SCRIPTS_DIR/quickfix.sh  | path to command to be executed |
+|QUICKFIX_DEFAULT_QUEUE   | queue/queue.cmd  | path to enqueue/dequeue resource to get commands that should be executed |
 
 
 - [customization options](docs/options.md)
