@@ -17,6 +17,7 @@ Configurable parameters
 |QUICKFIX_DEFAULT_HEIGHT    | 30 | Default height of the quickfix pane |
 |QUICKFIX_DEFAULT_PER_SIZE  | 20 | Default perc size (it has more priority than height value) |
 |QUICKFIX_DEFAULT_POSITION  | bottom  | Default position: bottom/top are the only allowed values |
+|QUICKFIX_DEFAULT_INPUT   | direct  | method to enqueue commands that should be executed: allowed values: [direct|queue] |
 |QUICKFIX_DEFAULT_QUEUE   | queue/queue.cmd  | path to enqueue/dequeue resource to get commands that should be executed |
 
 
@@ -47,17 +48,4 @@ WORK IN PROGRESS...
 
 Next steps:
 
-+ Kill window when is in foreground and hide it when a command is executed in background;
-  |=> Approach: get the pstree list identifying if a pid belongs to the quickfix pane.
-
-    for s in `tmux list-sessions -F '#{session_name}'` ; do
-        echo -e "\ntmux session name: $s\n--------------------"
-        for p in `tmux list-panes -s -F '#{pane_pid}' -t "$s"` ; do
-            pstree -p -a -A $p
-        done
-    done 
-
-+ Define a background queue to accept and execute commands;
-+ Better test for toggling functions and metadata;
-+ unregister metadata
 + make the plugin installable by tpm

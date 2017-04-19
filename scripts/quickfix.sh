@@ -79,12 +79,16 @@ split_qfix() {
 
 	[ ! -n "$qfix_size" ] && qfix_size="${QUICKFIX_DEFAULT_PERC_SIZE}"
 	
+	local cmd="$2"	
+
 	case $1 in
 		"bottom")
 			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
 			pane_id=$(echo "$info" | cut -d ':' -f3)
 			tmux select-window -l
 			tmux join-pane -v -l "$qfix_size" -s "$pane_id"
+
+			exec_cmd "$cmd" "$pane_id"
 			
 			#we need to register this qfix info to the option world of tmux for this session
 			echo "$info"
@@ -96,18 +100,53 @@ split_qfix() {
 			tmux select-window -l
 			tmux join-pane -v -lb "$qfix_size" -s "$pane_id"
 			
+			exec_cmd "$cmd" "$pane_id"
+			
 			#we need to register this qfix_id to the option world of tmux
 			echo "$info"
 			;;
 	esac
 }
 
+send_cmd() {
+	
+	# if the method is direct, copy the command to the clipboard , 
+	# if instead the method is queue, we enqueue the command
+
+	input="$1" #direct or queue
+	cmd="$2"
+
+  	case $input in
+		"queue")
+			echo "enqueue command"
+			tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
+	  		
+			#TODO: use mktemp to generate a temp queue to send commands..
+			[[ ! -e "$tmux_queue" ]] && (touch "$tmux_queue"; tmux display-message "TMUX queue ($tmux_queue) created.")
+
+			quickfix_command_enqueue $cmd
+			;;
+		"direct")
+	  		cmdw="$(echo "$cmd" | xsel -i -p)"
+	  		;;
+		*)
+	  		tmux display-message "tmux-quickfix unsupported input method"
+	  		exit
+	  		;;
+  	esac
+
+}
 
 create_quickfix	() {
 	local position="$1" # top / bottom
 	local mode="$2"
+	
+	local cmd="$3"
+	
 	local quickfix_meta
-	quickfix_meta="$(split_qfix "${position}")"
+	#quickfix_meta="$(split_qfix "${position}")"
+	
+	quickfix_meta="$(split_qfix "${position}" "${cmd}")"
 	register_quickfix "$quickfix_meta" "$mode"
 }
 
@@ -142,6 +181,8 @@ send_front(){
 	size=$(get_tmux_option "${QUICKFIX_PERC_OPTION}")
 	local position="$1"
 	local mode="$2"
+	local cmd="$3"
+	
 	#Check if quickfix wrapper window isn't closed
 	quick_win="$(tmux list-windows -F "#{window_id}" 2>/dev/null | grep "$(get_qfix_id_by 'win_id')")"
 	
@@ -150,15 +191,18 @@ send_front(){
 	else
 		# Cannot find quickfix win: update meta and redraw
 		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}"
-		create_quickfix "$position" "$mode" 
+		create_quickfix "$position" "$mode" "$cmd"
 	fi
 }
 
 
 toggle_quickfix() {
 	position=$(get_tmux_option "${QUICKFIX_POSITION}")
-	
+	input=$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}")
 	[ -n "$position" ] && position="${QUICKFIX_DEFAULT_POSITION}"
+	
+	## THIS IS JUST A TRY
+	cmd="$(xsel -p)"
 	
 	#Work on this param
 	mode="default"
@@ -167,11 +211,14 @@ toggle_quickfix() {
 		if quickfix_is_fore; then
 			send_back
 		else
-			send_front "$position" "$mode"
+			send_front "$position" "$mode" "$cmd"
 		fi
 	else
-		create_quickfix "$position" "$mode"
+		create_quickfix "$position" "$mode" "$cmd"
 	fi
+	
+	# TODO: be sure that buffer is clean
+	xsel -c
 }
 
 
