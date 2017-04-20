@@ -22,14 +22,18 @@ register_quickfix() {
 	local quickfix_pane_id
 	local quickfix_designed_index
 	local quickfix_info="$1"
+	local mode="$2" # direct / queue
+
 	session="$(get_current_session)"
 	quickfix_pane_id="$(echo "${quickfix_info}" | cut -d ':' -f3)"
 	quickfix_designed_index=$(get_qfix_id_by 'default')
 	
+	local quickfix_window_id
+	[ "$mode" = "direct" ] && quickfix_window_id="@-1" || quickfix_window_id="$(echo "${quickfix_info}" | cut -d ':' -f2)"
 	#The win_id is not necessarily the index: set the value to -1 until the 
 	#background win is created
 
-	quickfix_info="${quickfix_designed_index}:@-1:${quickfix_pane_id}"
+	quickfix_info="${quickfix_designed_index}:${quickfix_window_id}:${quickfix_pane_id}"
 	set_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "${quickfix_info}" "${session}"
 }
 
@@ -79,16 +83,21 @@ split_qfix() {
 
 	[ ! -n "$qfix_size" ] && qfix_size="${QUICKFIX_DEFAULT_PERC_SIZE}"
 	
-	local cmd="$2"	
+	local mode="$2" # direct / queue
+	local cmd="$3"	
 
 	case $1 in
 		"bottom")
 			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
 			pane_id=$(echo "$info" | cut -d ':' -f3)
 			tmux select-window -l
-			tmux join-pane -v -l "$qfix_size" -s "$pane_id"
-
-			exec_cmd "$cmd" "$pane_id"
+			if [ "$mode" == "direct" ]; then
+				tmux join-pane -v -l "$qfix_size" -s "$pane_id"
+				exec_cmd "$cmd" "$pane_id"
+			else
+				tmux join-pane -v -l "$qfix_size" -s "$pane_id"
+				send_back $mode
+			fi
 			
 			#we need to register this qfix info to the option world of tmux for this session
 			echo "$info"
@@ -98,15 +107,17 @@ split_qfix() {
 			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
 			pane_id=$(echo "$info" | cut -d ':' -f3)
 			tmux select-window -l
-			tmux join-pane -v -lb "$qfix_size" -s "$pane_id"
-			
-			exec_cmd "$cmd" "$pane_id"
+			if [ "$mode" == "direct" ]; then
+				tmux join-pane -v -lb "$qfix_size" -s "$pane_id"
+				exec_cmd "$cmd" "$pane_id"
+			fi
 			
 			#we need to register this qfix_id to the option world of tmux
 			echo "$info"
 			;;
 	esac
 }
+
 
 send_cmd() {
 	
@@ -120,33 +131,34 @@ send_cmd() {
 		"queue")
 			echo "enqueue command"
 			tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
-	  		
+			
 			#TODO: use mktemp to generate a temp queue to send commands..
-			[[ ! -e "$tmux_queue" ]] && (touch "$tmux_queue"; tmux display-message "TMUX queue ($tmux_queue) created.")
+			[[ ! -e "$tmux_queue" ]] && (gen_queue; tmux display-message "TMUX queue ($tmux_queue) created.")
 
-			quickfix_command_enqueue $cmd
+			quickfix_command_enqueue "$cmd"
 			;;
 		"direct")
-	  		cmdw="$(echo "$cmd" | xsel -i -p)"
+			cmdw="$(echo "$cmd" | xsel -i -p)"
 	  		;;
 		*)
-	  		tmux display-message "tmux-quickfix unsupported input method"
-	  		exit
-	  		;;
+			tmux display-message "tmux-quickfix unsupported input method"
+			exit
+			;;
   	esac
 
 }
 
 create_quickfix	() {
 	local position="$1" # top / bottom
-	local mode="$2"
+	
+	local mode="$2" # direct / queue
 	
 	local cmd="$3"
 	
 	local quickfix_meta
 	#quickfix_meta="$(split_qfix "${position}")"
 	
-	quickfix_meta="$(split_qfix "${position}" "${cmd}")"
+	quickfix_meta="$(split_qfix "${position}" "${mode}" "${cmd}")"
 	register_quickfix "$quickfix_meta" "$mode"
 }
 
@@ -160,6 +172,8 @@ quickfix_is_fore() {
 
 send_back() {
 	win_index=$(get_qfix_id_by 'default')
+	local mode="$1" # direct / queue
+
 	tmux break-pane -d -t "${win_index}" -s "$(get_qfix_id_by 'pane_id')"
 	
 	## The adopted method is to use the window_index to set its status format
@@ -169,7 +183,7 @@ send_back() {
 	quick_meta="$(get_window_info "${win_index}")"
 	update_quickfix_meta "$quick_meta"
 	
-	if [ ! "$(check_process)" ]; then 
+	if [ ! "$(check_process)" ] && [ "$mode" == "direct" ]; then 
 		kill_quickfix "pane"
 	#else
 	#	echo "Cannot kill"
@@ -179,12 +193,15 @@ send_back() {
 
 send_front(){
 	size=$(get_tmux_option "${QUICKFIX_PERC_OPTION}")
+	
 	local position="$1"
 	local mode="$2"
 	local cmd="$3"
 	
-	#Check if quickfix wrapper window isn't closed
-	quick_win="$(tmux list-windows -F "#{window_id}" 2>/dev/null | grep "$(get_qfix_id_by 'win_id')")"
+	#TODO: BUG => the windowID is +1 :/
+	#quick_win="$(tmux list-windows -F "#{window_id}" 2>/dev/null | grep "$(get_qfix_id_by 'win_id')")"
+	
+	quick_win="$(tmux list-windows -F "#{window_index}" 2>/dev/null | grep "$(get_qfix_id_by 'win_index')")"
 	
 	if [ -n "$quick_win" ]; then
 		quickfix_join_pane "$size"
@@ -198,18 +215,16 @@ send_front(){
 
 toggle_quickfix() {
 	position=$(get_tmux_option "${QUICKFIX_POSITION}")
-	input=$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}")
+	
+	mode=$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}")
 	[ -n "$position" ] && position="${QUICKFIX_DEFAULT_POSITION}"
 	
 	## THIS IS JUST A TRY
 	cmd="$(xsel -p)"
 	
-	#Work on this param
-	mode="default"
-
 	if quickfix_exists; then
 		if quickfix_is_fore; then
-			send_back
+			send_back "$mode"
 		else
 			send_front "$position" "$mode" "$cmd"
 		fi

@@ -160,14 +160,24 @@ quickfix_command_enqueue() {
 	fi
 }
 
+gen_queue() {
+	if [ -z "$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")" ]; then
+		qf=$(mktemp ${QUICKFIX_CMD_QUEUE_BASENAME}.XXX$RANDOM)
+		set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${qf}"
+	fi
+}
+
 
 exec_cmd() {
 	local cmd
+	local pane_id
 	cmd="$1"
+	pane_id="$2"
 	
 	#TODO: If no processes are executed inside the quickfix we can send this
-	qf="$(get_qfix_id_by 'pane_id')"
-	tmux send-keys -t "$qf" "'$cmd'" Enter
+	if [ -n "$cmd" ]; then
+		tmux send-keys -t "$pane_id" "$cmd" Enter
+	fi
 }
 
 
@@ -190,8 +200,9 @@ have_child() {
 check_process() {
 
 	local session
-	session="$(get_target_session)"
+	session="$(get_current_session)"
 	pane="$(get_qfix_id_by 'pane_id')"
+	
 	main_pid=$(tmux list-panes -s -F '#{pane_id}:#{pane_pid}' -t "$session" | grep "$pane" | cut -d ':' -f2)
 	if [ ! -z "$main_pid" ]; then
 		have_child "$main_pid"

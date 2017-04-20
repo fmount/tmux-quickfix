@@ -14,11 +14,10 @@ Configurable parameters
 | Parameter | Default Value | Description |
 |-----------|---------------|-------------|
 |QUICKFIX_DEFAULT_KEY       | z | [leader]+[key] to send back/front the quickfix pane |
-|QUICKFIX_DEFAULT_HEIGHT    | 30 | Default height of the quickfix pane |
 |QUICKFIX_DEFAULT_PER_SIZE  | 20 | Default perc size (it has more priority than height value) |
 |QUICKFIX_DEFAULT_POSITION  | bottom  | Default position: bottom/top are the only allowed values |
 |QUICKFIX_DEFAULT_INPUT   | direct  | method to enqueue commands that should be executed: allowed values: [direct|queue] |
-|QUICKFIX_DEFAULT_QUEUE   | queue/queue.cmd  | path to enqueue/dequeue resource to get commands that should be executed |
+|QUICKFIX_CMD_QUEUE_BASENAME  | queue.cmd  | basename of the temp enqueue/dequeue resource to get commands that should be executed |
 
 
 - [customization options](docs/options.md)
@@ -42,6 +41,26 @@ Reload TMUX environment:
 
 You should now be able to use the plugin.
 
+Install using tpm
+----
+Simply add to the tpm section of .tmux.conf:
+
+    set -g @plugins 'fmount/tmux-quickfix'
+
+
+Test Direct method
+---
+sh1$
+\> echo "time ping www.example.com" | xsel -i -p
+
+then exec [prefix] + z 
+
+#TODO: Insert gif as example..
+
+
+Test Queue method
+----
+
 
 WORK IN PROGRESS...
 ----
@@ -49,3 +68,4 @@ WORK IN PROGRESS...
 Next steps:
 
 + make the plugin installable by tpm
++ enable queue backend to process commands
