@@ -43,8 +43,7 @@ unset_tmux_option() {
 # get the key from the variable name
 get_key_from_option_name() {
 	local option="$1"
-	echo "$option" |
-		sed "s/^${VAR_KEY_PREFIX}-//"
+	echo "$option" | sed "s/^${VAR_KEY_PREFIX}-//"
 }
 
 
@@ -112,6 +111,20 @@ kill_pan() {
 	tmux killp -t "${pan_id}"
 }
 
+## Buffers management
+
+save_buffer() {
+	TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+    [[ ! -e "${TMUX_BUF}" ]] && (touch "${TMUX_BUF}";)
+	tmux saveb "${TMUX_BUF}"
+}
+
+get_buffer_cmd() {
+	tmuxb="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+	tmux loadb "$tmuxb"
+	cmd="$(head -n1 "$tmuxb" && sed -i 'd' "$tmuxb")"
+	echo "$cmd"
+}
 
 
 # Executed by the main bash when we need to put the quick
@@ -175,12 +188,10 @@ pidof_quick() {
 quick_process_tree() {
 	local s
 	s=$(get_target_session)	
-#for s in $(tmux list-sessions -F '#{session_name}') ; do
 	echo -e "\ntmux session name: $s\n--------------------"
 	for p in $(tmux list-panes -s -F '#{pane_pid}' -t "$s") ; do
 		pstree -p -a -A "$p"
 	done
-#done	
 }
 
 
@@ -199,7 +210,7 @@ quickfix_command_enqueue() {
 
 gen_multi_queue() {
 	if [ -z "$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")" ]; then
-		qf=$(mktemp ${QUICKFIX_CMD_QUEUE_BASENAME}.XXX$RANDOM)
+		qf=$(mktemp "${QUICKFIX_CMD_QUEUE_BASENAME}".XXX$RANDOM)
 		set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${qf}"
 	fi
 }

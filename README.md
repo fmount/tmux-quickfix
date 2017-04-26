@@ -63,9 +63,18 @@ Test Queue method
 ----
 
 
+
+
+
+
+
 WORK IN PROGRESS...
 ----
 
 Next steps:
 
-+ enable queue backend to process commands
++ Remove xsel/xclip dependencies: use tmux buffers!!¡¡
++ Fix some includes to be more consistent
++ Fix Queue_home and quickfix_home to work on the .tmux/plugin environment
++ Create a way to enqueue commands both in direct and in queue mode (a bind key could be useful)
+

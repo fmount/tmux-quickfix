@@ -94,7 +94,6 @@ split_qfix() {
 				tmux join-pane -v -l "$qfix_size" -s "$pane_id"
 				exec_cmd "$cmd" "$pane_id"
 			else
-				#tmux_queue="$HOME/queue.cmd"
 				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
 				if [ ! -f "$tmux_queue" ]; then touch "$tmux_queue"; fi
 				main_pid="$(pidof_quick "$pane_id")"
@@ -158,7 +157,7 @@ send_cmd() {
 			quickfix_command_enqueue "$cmd"
 			;;
 		"direct")
-			cmdw="$(echo "$cmd" | xsel -i -p)"
+			cmdw="$(echo "$cmd" | xsel -i)"
 	  		;;
 		*)
 			tmux display-message "tmux-quickfix unsupported input method"
@@ -173,8 +172,6 @@ create_quickfix	() {
 	local mode="$2" # direct / queue
 	local cmd="$3"
 	local quickfix_meta
-	#quickfix_meta="$(split_qfix "${position}")"
-	
 	quickfix_meta="$(split_qfix "${position}" "${mode}" "${cmd}")"
 	register_quickfix "$quickfix_meta" "$mode"
 }
@@ -236,9 +233,9 @@ toggle_quickfix() {
 	mode=$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}")
 	[ -n "$position" ] && position="${QUICKFIX_DEFAULT_POSITION}"
 	
-	## THIS IS JUST A TRY
-	cmd="$(xsel -p)"
 	
+	#cmd="$(head -n1 tmbuf)"
+	cmd="$(get_buffer_cmd)"
 	if quickfix_exists; then
 		if quickfix_is_fore; then
 			send_back "$mode"
@@ -249,8 +246,6 @@ toggle_quickfix() {
 		create_quickfix "$position" "$mode" "$cmd"
 	fi
 	
-	# TODO: be sure that buffer is clean
-	xsel -c
 }
 
 
