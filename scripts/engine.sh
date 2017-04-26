@@ -1,8 +1,13 @@
+#source "/home/fmount/git/tmux-quickfix/scripts/session.sh"
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+QUEUE_HOME="$CURRENT_DIR/../queue"
+
 get_tmux_option() {
 	local option=$1
 	local default_value=$2
 	#local option_value=$(tmux show-option -sqv "$option")
-	local option_value=$(tmux show-option -qv "$option")
+	local option_value
+	option_value=$(tmux show-option -qv "$option")
 	if [ -z "$option_value" ]; then
 		echo "$default_value"
 	else
@@ -42,10 +47,12 @@ get_key_from_option_name() {
 		sed "s/^${VAR_KEY_PREFIX}-//"
 }
 
+
 get_value_from_option_name() {
 	local option="$1"
-	echo "$(get_tmux_option "$option" "")"
+	get_tmux_option "$option" ""
 }
+
 
 get_pane_info() {
 	local pane_id="$1"
@@ -54,6 +61,7 @@ get_pane_info() {
 		\grep "$pane_id" |
 		cut -d',' -f2-
 }
+
 
 get_window_info() {
 	local win_index="$1"
@@ -67,6 +75,7 @@ get_qfix_info() {
 	
 	echo "$quickfix_info"
 }
+
 
 get_qfix_id_by() {
 	local id
@@ -103,6 +112,8 @@ kill_pan() {
 	tmux killp -t "${pan_id}"
 }
 
+
+
 # Executed by the main bash when we need to put the quick
 # in FG. 
 quickfix_join_pane() {
@@ -129,65 +140,7 @@ quickfix_height() {
 	get_tmux_option "$QUICKFIX_HEIGHT_OPTION" "$QUICKFIX_DEFAULAT_HEIGHT"
 }
 
-
-#command_exists() {
-#	local command="$1"
-#	type "$command" >/dev/null 2>&1
-#}
-
-
-#quickfix_user_command() {
-#	get_tmux_option "$QUICKFIX_COMMAND_OPTION" ""
-#}
-
-
-#quickfix_command() {
-#	local user_command="$(quickfix_user_command)"
-#	if [ -n "$user_command" ]; then
-#		echo "$user_command"
-#	fi
-#}
-
-
-quickfix_command_enqueue() {
-	echo "ENQUEUE"
-	cmd="$1"
-	queue="$(get_tmux_option "$QUICKFIX_COMMAND_QUEUE")"
-	if [ -n "$queue" ]; then
-		echo "$cmd" >> "${queue}"
-	else
-		echo "$cmd" >> "${QUICKFIX_DEFAULT_CMD_QUEUE}"
-	fi
-}
-
-gen_queue() {
-	if [ -z "$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")" ]; then
-		qf=$(mktemp ${QUICKFIX_CMD_QUEUE_BASENAME}.XXX$RANDOM)
-		set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${qf}"
-	fi
-}
-
-
-exec_cmd() {
-	local cmd
-	local pane_id
-	cmd="$1"
-	pane_id="$2"
-	
-	#TODO: If no processes are executed inside the quickfix we can send this
-	if [ -n "$cmd" ]; then
-		tmux send-keys -t "$pane_id" "$cmd" Enter
-	fi
-}
-
-
-quickfix_cmd_dequeue() {
-	echo "DEQUEUE"
-	queue="$(get_tmux_option "$QUICKFIX_COMMAND_QUEUE")"
-	current=$(tail -n1 "$queue" && sed '$d' "$queue")
-	exec_cmd "$current"
-}
-
+### QUEUE AND PROCESSES HANDLING SECTION ###
 
 have_child() {
 	target_pid="$1"
@@ -210,6 +163,15 @@ check_process() {
 }
 
 
+pidof_quick() {
+	local session
+	session="$(get_current_session)"
+	pane="$1"
+	main_pid=$(tmux list-panes -s -F '#{pane_id}:#{pane_pid}' -t "$session" | grep "$pane" | cut -d ':' -f2)
+	echo "$main_pid"
+}
+
+
 quick_process_tree() {
 	local s
 	s=$(get_target_session)	
@@ -219,4 +181,67 @@ quick_process_tree() {
 		pstree -p -a -A "$p"
 	done
 #done	
+}
+
+
+quickfix_command_enqueue() {
+	#echo "ENQUEUE"
+	cmd="$1"
+	queue="$2"
+	#queue="$(get_tmux_option "$QUICKFIX_COMMAND_QUEUE")"
+	if [ -n "$queue" ]; then
+		echo "$cmd" >> "${queue}"
+	#else
+	#	echo "$cmd" >> "${QUICKFIX_DEFAULT_CMD_QUEUE}"
+	fi
+}
+
+
+gen_multi_queue() {
+	if [ -z "$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")" ]; then
+		qf=$(mktemp ${QUICKFIX_CMD_QUEUE_BASENAME}.XXX$RANDOM)
+		set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${qf}"
+	fi
+}
+
+gen_queue() {
+	files=(/${QUEUE_HOME}/*)
+	if [ ${#files[@]} -eq 0 ]; then
+		touch "${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}"
+	fi
+	set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${QUICKFIX_CMD_QUEUE_BASENAME}"
+
+}
+
+exec_cmd() {
+	local cmd
+	local pane_id
+	
+	cmd="$1"
+	pane_id="$2"
+	if [ -n "$cmd" ]; then
+		tmux send-keys -t "$pane_id" "$cmd" Enter
+	fi
+}
+
+
+quickfix_cmd_dequeue() {
+	queue="$1"
+	#queue="$(get_tmux_option "$QUICKFIX_COMMAND_QUEUE")"
+	current=$(tail -n1 "$queue" 2>/dev/null && sed -i '$d' "$queue")
+	echo "$current"
+	#exec_cmd "$current"
+}
+
+
+# Utility used to debug some without affect the behaviour of the plugin
+quickfix_code_debug() {
+	msg="$1"
+	
+	#target="${QUICKFIX_DEBUG_LOG}"
+	target="quickfix-plugin.log"
+	timestamp="$(date +%T)"
+	function_caller="${FUNCNAME[1]}"
+	
+	echo "$timestamp - $function_caller - $msg " >> "$HOME"/"$target"
 }

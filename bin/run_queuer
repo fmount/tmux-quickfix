@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+# Script intended for use via the command line.
+#
+
+#CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+QUICK_HOME="/home/fmount/git/tmux-quickfix/scripts"
+
+source "$QUICK_HOME/engine.sh"
+source "$QUICK_HOME/session.sh"
+
+POLLING_TIMEOUT=10
+PID_LOCK="$QUICK_HOME/../run_queuer.lock"
+
+# TODO: Exclude a list of pids (because I want consider all
+# bg processes ..)
+
+have_child() {
+	target_pid="$1"
+	pid_to_exclude="$2"
+	PGREP=$(which pgrep)
+	pg="$("$PGREP" -P "$target_pid")"
+	if [ "$pg" != "$pid_to_exclude" ]; then 
+		echo "$pg"
+	fi
+}
+
+
+run_dequeuer() {
+	
+	session="$1"
+	pane_id="$2"
+	main_pid="$3"
+	tmux_queue="$4"
+
+	while true ; do
+		if [ ! "$(have_child "$3" "$$")" ]; then 
+			cmd=$(quickfix_cmd_dequeue "$tmux_queue")
+			exec_cmd "$cmd" "$pane_id"
+		#else
+		#	echo "Sleep because another process is running"
+		fi
+		sleep "$POLLING_TIMEOUT";
+		check_tmux_user_session "$session" "$main_pid" "${PID}"
+	done
+}
+
+
+kill_queuer() {
+	if [ -f "${PID_LOCK}" ]; then
+		PID="$(head -n1 $PID_LOCK)"
+		kill -15 "${PID}"
+		rm "${PID_LOCK}"
+	fi
+}
+
+check_tmux_user_session() {
+	session_id="$1"
+	main_pid="$2"
+	PID=$(head -n1 "${PID_LOCK}")
+	if ! session_exists "$session_id"; then
+		quickfix_code_debug "I CAN KILL MYSELF [PID: ${PID}]"
+		kill_queuer
+	#else
+	#	quickfix_code_debug "DON'T KILL YET"
+	fi
+}
+
+
+main() {
+	session="$1"
+	pane_id="$2"
+	main_pid="$3"
+	tmux_queue="$4"
+	eval run_dequeuer "$session" "$pane_id" "$main_pid" "$tmux_queue" & > /dev/null
+	PID="$!"
+	echo "${PID}" > $PID_LOCK
+	quickfix_code_debug "[MAIN PID] ${PID} "
+}
+
+main "$@"
+#main "71" "%202" "18148" "$HOME/queue.cmd"

@@ -10,10 +10,16 @@ get_target_session() {
 
 
 get_attached_sessions() {
-	echo "$(tmux list-sessions | sed -n '/(attached)/s/:.*//p')"
+	tmux list-sessions | sed -n '/(attached)/s/:.*//p'
 }
+
 
 get_current_session() {
-	echo "$(tmux display-message -p "#S")"
+	tmux display-message -p "#S"
 }
 
+session_exists() {
+	s_target="$1"
+	t_target="$(tmux list-session | grep "$s_target" | cut -d ':' -f1)"
+	[ "$s_target" = "$t_target" ] && return 0 || return 1
+}

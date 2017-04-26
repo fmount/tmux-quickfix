@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BIN="$CURRENT_DIR/../bin"
 
 source "$CURRENT_DIR/engine.sh"
 source "$CURRENT_DIR/variables.sh"
@@ -11,7 +12,6 @@ PANE_CURRENT_PATH="$(pwd)"
 
 quickfix_exists() {
 	local var
-	local index
 	var="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "")"
 	[ -n "$var" ]
 }
@@ -53,7 +53,6 @@ kill_quickfix() {
 	target="$1"
 	if [ "$target" = "window" ]; then
 		quick_win_id="$(get_qfix_id_by 'win_id')"
-		echo "killing window: $quick_win_id"
 		kill_win "$quick_win_id"
 		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}"
 	elif [ "$target" = "pane" ]; then
@@ -95,8 +94,16 @@ split_qfix() {
 				tmux join-pane -v -l "$qfix_size" -s "$pane_id"
 				exec_cmd "$cmd" "$pane_id"
 			else
+				#tmux_queue="$HOME/queue.cmd"
+				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
+				if [ ! -f "$tmux_queue" ]; then touch "$tmux_queue"; fi
+				main_pid="$(pidof_quick "$pane_id")"
+				current_session="$(get_current_session)"
 				tmux join-pane -v -l "$qfix_size" -s "$pane_id"
-				send_back $mode
+				send_back "$mode"
+				
+				cmd="sh $BIN/run_queuer $current_session $pane_id $main_pid $tmux_queue"
+				exec_cmd "$cmd" "$pane_id"
 			fi
 			
 			#we need to register this qfix info to the option world of tmux for this session
@@ -110,6 +117,19 @@ split_qfix() {
 			if [ "$mode" == "direct" ]; then
 				tmux join-pane -v -lb "$qfix_size" -s "$pane_id"
 				exec_cmd "$cmd" "$pane_id"
+			else
+				#TODO: get queue from metadata
+				#tmux_queue="$HOME/queue.cmd"
+				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
+				
+				main_pid="$(pidof_quick "$pane_id")"
+				current_session="$(get_current_session)"
+				tmux join-pane -v -l "$qfix_size" -s "$pane_id"
+				send_back "$mode"
+				
+				cmd="sh $BIN/run_queuer $current_session $pane_id $main_pid $tmux_queue"
+				exec_cmd "$cmd" "$pane_id"
+
 			fi
 			
 			#we need to register this qfix_id to the option world of tmux
@@ -150,11 +170,8 @@ send_cmd() {
 
 create_quickfix	() {
 	local position="$1" # top / bottom
-	
 	local mode="$2" # direct / queue
-	
 	local cmd="$3"
-	
 	local quickfix_meta
 	#quickfix_meta="$(split_qfix "${position}")"
 	
