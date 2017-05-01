@@ -83,7 +83,7 @@ split_qfix() {
 	[ ! -n "$qfix_size" ] && qfix_size="${QUICKFIX_DEFAULT_PERC_SIZE}"
 	
 	local mode="$2" # direct / queue
-	local cmd="$3"	
+	#local cmd="$3"	
 
 	case $1 in
 		"bottom")
@@ -92,7 +92,7 @@ split_qfix() {
 			tmux select-window -l
 			if [ "$mode" == "direct" ]; then
 				tmux join-pane -v -l "$qfix_size" -s "$pane_id"
-				exec_cmd "$cmd" "$pane_id"
+				exec_cmd "" "$pane_id" "$mode"
 			else
 				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
 				if [ ! -f "$tmux_queue" ]; then touch "$tmux_queue"; fi
@@ -102,7 +102,8 @@ split_qfix() {
 				send_back "$mode"
 				
 				cmd="sh $BIN/run_queuer $current_session $pane_id $main_pid $tmux_queue"
-				exec_cmd "$cmd" "$pane_id"
+				# Exec cmd that runs the worker to dequeue commands
+				exec_cmd "$cmd" "$pane_id" "$mode"
 			fi
 			
 			#we need to register this qfix info to the option world of tmux for this session
@@ -115,7 +116,7 @@ split_qfix() {
 			tmux select-window -l
 			if [ "$mode" == "direct" ]; then
 				tmux join-pane -v -lb "$qfix_size" -s "$pane_id"
-				exec_cmd "$cmd" "$pane_id"
+				exec_cmd "" "$pane_id" "$mode"
 			else
 				#TODO: get queue from metadata
 				#tmux_queue="$HOME/queue.cmd"
@@ -127,7 +128,7 @@ split_qfix() {
 				send_back "$mode"
 				
 				cmd="sh $BIN/run_queuer $current_session $pane_id $main_pid $tmux_queue"
-				exec_cmd "$cmd" "$pane_id"
+				exec_cmd "$cmd" "$pane_id" "$mode"
 
 			fi
 			
@@ -138,41 +139,13 @@ split_qfix() {
 }
 
 
-send_cmd() {
-	
-	# if the method is direct, copy the command to the clipboard , 
-	# if instead the method is queue, we enqueue the command
-
-	input="$1" #direct or queue
-	cmd="$2"
-
-  	case $input in
-		"queue")
-			echo "enqueue command"
-			tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
-			
-			#TODO: use mktemp to generate a temp queue to send commands..
-			[[ ! -e "$tmux_queue" ]] && (gen_queue; tmux display-message "TMUX queue ($tmux_queue) created.")
-
-			quickfix_command_enqueue "$cmd"
-			;;
-		"direct")
-			cmdw="$(echo "$cmd" | xsel -i)"
-	  		;;
-		*)
-			tmux display-message "tmux-quickfix unsupported input method"
-			exit
-			;;
-  	esac
-
-}
-
 create_quickfix	() {
 	local position="$1" # top / bottom
 	local mode="$2" # direct / queue
-	local cmd="$3"
+	#local cmd="$3"
 	local quickfix_meta
-	quickfix_meta="$(split_qfix "${position}" "${mode}" "${cmd}")"
+	#quickfix_meta="$(split_qfix "${position}" "${mode}" "${cmd}")"
+	quickfix_meta="$(split_qfix "${position}" "${mode}")"
 	register_quickfix "$quickfix_meta" "$mode"
 }
 
@@ -210,7 +183,7 @@ send_front(){
 	
 	local position="$1"
 	local mode="$2"
-	local cmd="$3"
+	#local cmd="$3"
 	
 	#TODO: BUG => the windowID is +1 :/
 	#quick_win="$(tmux list-windows -F "#{window_id}" 2>/dev/null | grep "$(get_qfix_id_by 'win_id')")"
@@ -222,7 +195,7 @@ send_front(){
 	else
 		# Cannot find quickfix win: update meta and redraw
 		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}"
-		create_quickfix "$position" "$mode" "$cmd"
+		create_quickfix "$position" "$mode" #"$cmd"
 	fi
 }
 
@@ -235,15 +208,16 @@ toggle_quickfix() {
 	
 	
 	#cmd="$(head -n1 tmbuf)"
-	cmd="$(get_buffer_cmd)"
+	#cmd="$(get_buffer_cmd)"
+	
 	if quickfix_exists; then
 		if quickfix_is_fore; then
 			send_back "$mode"
 		else
-			send_front "$position" "$mode" "$cmd"
+			send_front "$position" "$mode" #"$cmd"
 		fi
 	else
-		create_quickfix "$position" "$mode" "$cmd"
+		create_quickfix "$position" "$mode" #"$cmd"
 	fi
 	
 }

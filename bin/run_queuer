@@ -36,7 +36,7 @@ run_dequeuer() {
 	while true ; do
 		if [ ! "$(have_child "$3" "$$")" ]; then 
 			cmd=$(quickfix_cmd_dequeue "$tmux_queue")
-			exec_cmd "$cmd" "$pane_id"
+			exec_cmd "$cmd" "$pane_id" "queue"
 		#else
 		#	echo "Sleep because another process is running"
 		fi
@@ -53,6 +53,7 @@ kill_queuer() {
 		rm "${PID_LOCK}"
 	fi
 }
+
 
 check_tmux_user_session() {
 	session_id="$1"

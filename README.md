@@ -19,6 +19,7 @@ Configurable parameters
 |QUICKFIX_DEFAULT_INPUT     | direct  | method to enqueue commands that should be executed: allowed values: [direct|queue] |
 |QUICKFIX_CMD_QUEUE_BASENAME| queue.cmd  | basename of the temp enqueue/dequeue resource to get commands that should be executed |
 |QUICKFIX_DEBUG_LOG         | $HOME/quickfix_plugin.log | log file for debug purposes |
+|QUICKFIX_BUFFER            | tmbuf        | default buffer to send direct commands to quickfix |
 
 - [customization options](docs/options.md)
 
@@ -51,10 +52,10 @@ Simply add to the tpm section of .tmux.conf:
 
 Test Direct method
 ---
-sh1$
-\> echo "time ping www.example.com" | xsel -i -p
+    sh_main_pane$
+    \> tmux setb -b tmbuf "ping -c3 127.0.0.1"
 
-then exec [prefix] + z 
+then: [prefix] + z 
 
 #TODO: Insert gif as example..
 
@@ -73,7 +74,6 @@ WORK IN PROGRESS...
 
 Next steps:
 
-+ Remove xsel/xclip dependencies: use tmux buffers!!¡¡
 + Fix some includes to be more consistent
 + Fix Queue_home and quickfix_home to work on the .tmux/plugin environment
 + Create a way to enqueue commands both in direct and in queue mode (a bind key could be useful)

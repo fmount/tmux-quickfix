@@ -119,11 +119,37 @@ save_buffer() {
 	tmux saveb "${TMUX_BUF}"
 }
 
+
+set_buffer_data() {
+	data="$1"
+	TMUX_BUF="$2"
+
+	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+	
+	tmux set-buffer -b "${TMUX_BUF}" "$data"
+}
+
+
+clean_buffer_data() {
+	TMUX_BUF="$1"
+	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+	
+	tmux set-buffer -b "$TMUX_BUF" " "
+}
+
+
 get_buffer_cmd() {
-	tmuxb="$(get_tmux_option "${QUICKFIX_BUFFER}")"
-	tmux loadb "$tmuxb"
-	cmd="$(head -n1 "$tmuxb" && sed -i 'd' "$tmuxb")"
-	echo "$cmd"
+	TMUX_BUF="$1"
+	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+	tmux show-buffer -b "$TMUX_BUF"
+}
+
+
+get_current_buffer_cmd() {
+	#TMUX_BUF="$1"
+	#[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+	tmux show-buffer #-b "$TMUX_BUF"
+	tmux delete-buffer
 }
 
 
@@ -224,24 +250,37 @@ gen_queue() {
 
 }
 
+# TODO: Review this function because when is in queue mode,
+# if no command is in the queue, it goes to the else [ that is 
+# used just for the direct mode ]
 exec_cmd() {
 	local cmd
 	local pane_id
-	
+	local mode
+
 	cmd="$1"
 	pane_id="$2"
-	if [ -n "$cmd" ]; then
-		tmux send-keys -t "$pane_id" "$cmd" Enter
-	fi
+	mode="$3"
+
+	case "$mode" in
+		"direct") 
+			tmux send-keys -t "$pane_id" "$(get_current_buffer_cmd)" Enter;
+			;;
+			
+		"queue") 
+			[ -n "$cmd" ] && tmux send-keys -t "$pane_id" "$cmd" Enter;
+			;;
+		"default") 
+			tmux display-message "Error executing command";
+			;;
+	esac
 }
 
 
 quickfix_cmd_dequeue() {
 	queue="$1"
-	#queue="$(get_tmux_option "$QUICKFIX_COMMAND_QUEUE")"
 	current=$(tail -n1 "$queue" 2>/dev/null && sed -i '$d' "$queue")
 	echo "$current"
-	#exec_cmd "$current"
 }
 
 
