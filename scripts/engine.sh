@@ -123,7 +123,6 @@ save_buffer() {
 set_buffer_data() {
 	data="$1"
 	TMUX_BUF="$2"
-
 	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
 	
 	tmux set-buffer -b "${TMUX_BUF}" "$data"
@@ -146,10 +145,8 @@ get_buffer_cmd() {
 
 
 get_current_buffer_cmd() {
-	#TMUX_BUF="$1"
-	#[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
-	tmux show-buffer #-b "$TMUX_BUF"
-	tmux delete-buffer
+	tmux show-buffer
+	#tmux delete-buffer
 }
 
 
@@ -262,9 +259,19 @@ exec_cmd() {
 	pane_id="$2"
 	mode="$3"
 
+	buffer="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+
 	case "$mode" in
-		"direct") 
-			tmux send-keys -t "$pane_id" "$(get_current_buffer_cmd)" Enter;
+		"direct")
+			if [ -n "$buffer" ]; then
+				# Use the default buffer specified in the options
+				quickfix_code_debug "[EXEC] $buffer"
+				tmux send-keys -t "$pane_id" "$(get_buffer_cmd "$buffer")" Enter;
+				clean_buffer_data
+			else
+				tmux send-keys -t "$pane_id" "$(get_current_buffer_cmd)" Enter;
+				tmux delete-buffer
+			fi
 			;;
 			
 		"queue") 
@@ -289,7 +296,7 @@ quickfix_code_debug() {
 	msg="$1"
 	
 	#target="${QUICKFIX_DEBUG_LOG}"
-	target="quickfix-plugin.log"
+	target="$HOME/quickfix-plugin.log"
 	timestamp="$(date +%T)"
 	function_caller="${FUNCNAME[1]}"
 	

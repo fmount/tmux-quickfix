@@ -3,12 +3,12 @@
 # Script intended for use via the command line.
 #
 
-#CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-QUICK_HOME="/home/fmount/git/tmux-quickfix/scripts"
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPTS="$CURRENT_DIR/scripts"
 
-source "$QUICK_HOME/engine.sh"
-source "$QUICK_HOME/session.sh"
-source "$QUICK_HOME/variables.sh"
+source "$SCRIPTS/engine.sh"
+source "$SCRIPTS/session.sh"
+source "$SCRIPTS/variables.sh"
 
 send_cmd() {
 	
@@ -17,21 +17,31 @@ send_cmd() {
 
 	input_type="$1" #direct or queue
 	
-  	case $input_type in
+	buffer="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+  	
+	case $input_type in
 		"queue")
 			tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
-			
-			#TODO: use mktemp to generate a temp queue to send commands..
+
 			[[ ! -e "$tmux_queue" ]] && (gen_queue; tmux display-message "TMUX queue ($tmux_queue) created.")
-			quickfix_command_enqueue "$(get_current_buffer_cmd)" "$tmux_queue"
+			
+			if [ -n "$buffer" ]; then
+				# Enqueue the command from the specified buffer reserved for quickfix plugin
+				quickfix_command_enqueue "$(get_buffer_cmd "$buffer")" "$tmux_queue"
+			else
+				quickfix_command_enqueue "$(get_current_buffer_cmd)" "$tmux_queue"
+			fi
 			;;
 		
-		#"direct")
+		"direct")
 			# Clear the buffer to remove old commands
-			#clean_buffer_data "$buffer"
-			#set_buffer_data "$cmd" "$buffer"
-			#tmux display-message "Command sent to quickfix"
-	  	#	;;
+			if [ -n "$buffer" ]; then
+				quickfix_code_debug "[USING BUF] $buffer and sending command $(get_current_buffer_cmd)"
+
+				set_buffer_data "$(get_current_buffer_cmd)" "$buffer"
+			fi
+			tmux display-message "Command sent to quickfix"
+	  		;;
 
 		*)
 			tmux display-message "tmux-quickfix unsupported input method"

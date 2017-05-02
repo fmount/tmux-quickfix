@@ -3,25 +3,28 @@
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR="$CURRENT_DIR/scripts"
 QUEUE_HOME="$CURRENT_DIR/queue"
+BIN="$CURRENT_DIR/bin"
 
 source "$SCRIPTS_DIR/engine.sh"
 source "$SCRIPTS_DIR/variables.sh"
 source "$SCRIPTS_DIR/session.sh"
 
 META_OPTIONS=(
-	"${QUICKFIX_KEY_PREFIX}":"${QUICKFIX_DEFAULT_KEY}"
 	"${QUICKFIX_POSITION}:${QUICKFIX_DEFAULT_POSITION}"
 	"${QUICKFIX_PERC_OPTION}:${QUICKFIX_DEFAULT_PERC_SIZE}"
 	"${QUICKFIX_COMMAND_INPUT}:${QUICKFIX_DEFAULT_CMD_INPUT}"
 	"${QUICKFIX_DEBUG_MODE}:${QUICKFIX_DEBUG_VALUE}"
 	"${QUICKFIX_COMMAND_QUEUE}:${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}"
-	#"${QUICKFIX_BUFFER}:${QUICKFIX_DEFAULT_BUFFER_NAME}"
+	"${QUICKFIX_BUFFER}:${QUICKFIX_DEFAULT_BUFFER_NAME}"
 )
 
 register_qfix_options() {
 	
 	local quickfix_command="$SCRIPTS_DIR/quickfix.sh"
+	local quickfix_sendcommand="$BIN/send_command"
+	
 	local quickfix_key="$QUICKFIX_DEFAULT_KEY"
+	local quickfix_sendkey="$QUICKFIX_DEFAULT_SENDKEY"
 
 	for option in "${META_OPTIONS[@]}"; do
 		key="${option%%:*}"
@@ -30,6 +33,7 @@ register_qfix_options() {
 	done
 
 	tmux bind-key "${quickfix_key}" run-shell "${quickfix_command}"
+	tmux bind-key "${quickfix_sendkey}" run-shell "${quickfix_sendcommand}"
 }
 
 
