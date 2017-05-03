@@ -4,7 +4,7 @@
 #
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SCRIPTS="$CURRENT_DIR/scripts"
+SCRIPTS="$CURRENT_DIR/../scripts"
 
 source "$SCRIPTS/engine.sh"
 source "$SCRIPTS/session.sh"
@@ -17,11 +17,10 @@ send_cmd() {
 
 	input_type="$1" #direct or queue
 	
-	buffer="$(get_tmux_option "${QUICKFIX_BUFFER}")"
-  	
+	buffer="$(get_tmux_option "${QUICKFIX_BUFFER}" "local")"
 	case $input_type in
 		"queue")
-			tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
+			tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "local")"
 
 			[[ ! -e "$tmux_queue" ]] && (gen_queue; tmux display-message "TMUX queue ($tmux_queue) created.")
 			
@@ -36,7 +35,6 @@ send_cmd() {
 		"direct")
 			# Clear the buffer to remove old commands
 			if [ -n "$buffer" ]; then
-				quickfix_code_debug "[USING BUF] $buffer and sending command $(get_current_buffer_cmd)"
 
 				set_buffer_data "$(get_current_buffer_cmd)" "$buffer"
 			fi
@@ -53,7 +51,7 @@ send_cmd() {
 
 
 main() {
-	input_type="$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}")"
+	input_type="$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}" "global")"
 	send_cmd "$input_type"
 }
 

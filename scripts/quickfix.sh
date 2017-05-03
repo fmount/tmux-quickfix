@@ -2,6 +2,7 @@
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN="$CURRENT_DIR/../bin"
+QUEUE_HOME="$CURRENT_DIR/../queue"
 
 source "$CURRENT_DIR/engine.sh"
 source "$CURRENT_DIR/variables.sh"
@@ -34,14 +35,18 @@ register_quickfix() {
 	#background win is created
 
 	quickfix_info="${quickfix_designed_index}:${quickfix_window_id}:${quickfix_pane_id}"
-	set_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "${quickfix_info}" "${session}"
+	set_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "${quickfix_info}" "${session}" "local"
 }
 
 
 unregister_quickfix() {
 	for element in $(tmux show-options -q | grep quickfix | cut -d " " -f1); do
-		unset_tmux_option "$element"
-	done	
+		unset_tmux_option "$element" "local"
+	done
+	
+	for element in $(tmux show-options -gq | grep quickfix | cut -d " " -f1); do
+		unset_tmux_option "$element" "global"
+	done
 }
 
 
@@ -54,11 +59,11 @@ kill_quickfix() {
 	if [ "$target" = "window" ]; then
 		quick_win_id="$(get_qfix_id_by 'win_id')"
 		kill_win "$quick_win_id"
-		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}"
+		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "local"
 	elif [ "$target" = "pane" ]; then
 		quick_pan_id="$(get_qfix_id_by 'pane_id')"
 		kill_pan "$quick_pan_id"
-		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}"
+		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "local"
 	fi
 }
 
@@ -66,19 +71,19 @@ kill_quickfix() {
 update_quickfix_meta() {
 	local new_meta="$1"
 	local old_meta
-	old_meta=$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}")
+	old_meta=$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "local")
 	
 	if [ "$new_meta" != "$old_meta" ]; then 
 		local session
 		session="$(get_current_session)"
-		set_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "${new_meta}" "${session}" 
+		set_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "${new_meta}" "${session}" "local"
 	fi
 }
 
 
 split_qfix() {
 
-	qfix_size=get_tmux_option "${QUICKFIX_PERC_OPTION}"
+	qfix_size="$(get_tmux_option "${QUICKFIX_PERC_OPTION}" "global")"
 
 	[ ! -n "$qfix_size" ] && qfix_size="${QUICKFIX_DEFAULT_PERC_SIZE}"
 	
@@ -94,7 +99,7 @@ split_qfix() {
 				tmux join-pane -v -l "$qfix_size" -s "$pane_id"
 				exec_cmd "" "$pane_id" "$mode"
 			else
-				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
+				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "local")"
 				if [ ! -f "$tmux_queue" ]; then touch "$tmux_queue"; fi
 				main_pid="$(pidof_quick "$pane_id")"
 				current_session="$(get_current_session)"
@@ -120,7 +125,7 @@ split_qfix() {
 			else
 				#TODO: get queue from metadata
 				#tmux_queue="$HOME/queue.cmd"
-				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")"
+				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "local")"
 				
 				main_pid="$(pidof_quick "$pane_id")"
 				current_session="$(get_current_session)"
@@ -179,7 +184,7 @@ send_back() {
 
 
 send_front(){
-	size=$(get_tmux_option "${QUICKFIX_PERC_OPTION}")
+	size=$(get_tmux_option "${QUICKFIX_PERC_OPTION}" "global")
 	
 	local position="$1"
 	local mode="$2"
@@ -201,14 +206,9 @@ send_front(){
 
 
 toggle_quickfix() {
-	position=$(get_tmux_option "${QUICKFIX_POSITION}")
-	
-	mode=$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}")
+	position=$(get_tmux_option "${QUICKFIX_POSITION}" "global")
+	mode="$1"
 	[ -n "$position" ] && position="${QUICKFIX_DEFAULT_POSITION}"
-	
-	
-	#cmd="$(head -n1 tmbuf)"
-	#cmd="$(get_buffer_cmd)"
 	
 	if quickfix_exists; then
 		if quickfix_is_fore; then
@@ -222,8 +222,27 @@ toggle_quickfix() {
 	
 }
 
+bootstrap() {
+	session="$(get_current_session)"
+	buffered="$1"
+	mode="$2"
+
+	case $mode in 
+		"direct")
+			[ "$buffered" = "yes" ] && (gen_buffer "$session")
+			;;
+		"queue")
+			[ ! -f "$QUEUE_HOME/${QUICKFIX_CMD_QUEUE_BASENAME}.$session" ] && (gen_queue "$session")
+			set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}.$session" "$session" "local"
+			;;
+	esac
+}
 
 main(){
-	toggle_quickfix
+	mode="$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}" "global")"
+
+	bootstrap "$(get_tmux_option "${QUICKFIX_BUFFER_RESERVED}" "global")" "$mode"
+
+	toggle_quickfix "$mode"
 }
 main

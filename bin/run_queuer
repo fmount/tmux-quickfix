@@ -3,8 +3,8 @@
 # Script intended for use via the command line.
 #
 
-#CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-QUICK_HOME="/home/fmount/git/tmux-quickfix/scripts"
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+QUICK_HOME="$CURRENT_DIR/../scripts"
 
 source "$QUICK_HOME/engine.sh"
 source "$QUICK_HOME/session.sh"
@@ -12,8 +12,6 @@ source "$QUICK_HOME/session.sh"
 POLLING_TIMEOUT=10
 PID_LOCK="$QUICK_HOME/../run_queuer.lock"
 
-# TODO: Exclude a list of pids (because I want consider all
-# bg processes ..)
 
 have_child() {
 	target_pid="$1"
@@ -37,8 +35,6 @@ run_dequeuer() {
 		if [ ! "$(have_child "$3" "$$")" ]; then 
 			cmd=$(quickfix_cmd_dequeue "$tmux_queue")
 			exec_cmd "$cmd" "$pane_id" "queue"
-		#else
-		#	echo "Sleep because another process is running"
 		fi
 		sleep "$POLLING_TIMEOUT";
 		check_tmux_user_session "$session" "$main_pid" "${PID}"
@@ -62,8 +58,6 @@ check_tmux_user_session() {
 	if ! session_exists "$session_id"; then
 		quickfix_code_debug "I CAN KILL MYSELF [PID: ${PID}]"
 		kill_queuer
-	#else
-	#	quickfix_code_debug "DON'T KILL YET"
 	fi
 }
 

@@ -4,15 +4,18 @@ QUEUE_HOME="$CURRENT_DIR/../queue"
 
 get_tmux_option() {
 	local option=$1
-	local default_value=$2
+	#local default_value=$2
 	#local option_value=$(tmux show-option -sqv "$option")
+	local scope="$2"
 	local option_value
-	option_value=$(tmux show-option -qv "$option")
-	if [ -z "$option_value" ]; then
-		echo "$default_value"
+	
+	if [ "$scope" = "local" ]; then
+		option_value=$(tmux show-option -qv "$option")
 	else
-		echo "$option_value"
+		option_value=$(tmux show-option -gqv "$option")
 	fi
+
+	echo "$option_value"
 }
 
 
@@ -20,36 +23,33 @@ set_tmux_id() {
 	local option=$1
 	local value
 	value=$(echo "$2" | sed 's/ /_/g' | cut -d '_' -f1)
-	#tmux set-option -sq "$option" "$value"
 	tmux set-option -q "$option" "$value"
 }
 
 
 set_tmux_option() {
-	local option=$1
-	local value=$2
-	local session=$3
-	#tmux set-option -sq  -t "$session" "$option" "$value"
-	tmux set-option -q  -t "$session" "$option" "$value"
+	local option="$1"
+	local value="$2"
+	local session="$3"
+	local scope="$4"
+
+	if [ "$scope" = "local" ]; then
+		tmux set-option -q  -t "$session" "$option" "$value"
+	else
+		tmux set-option -gq "$option" "$value"
+	fi
+
 }
 
 
 unset_tmux_option() {
 	local option_name=$1
-	tmux set-option -u "$option_name"
-}
-
-
-# get the key from the variable name
-get_key_from_option_name() {
-	local option="$1"
-	echo "$option" | sed "s/^${VAR_KEY_PREFIX}-//"
-}
-
-
-get_value_from_option_name() {
-	local option="$1"
-	get_tmux_option "$option" ""
+	local scope="$2"
+	if [ "$scope" = "local" ]; then
+		tmux set-option -u "$option_name"
+	else	
+		tmux set-option -gu "$option_name"
+	fi
 }
 
 
@@ -70,7 +70,7 @@ get_window_info() {
 
 get_qfix_info() {
 	local quickfix_info
-	quickfix_info="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}")"
+	quickfix_info="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "local")"
 	
 	echo "$quickfix_info"
 }
@@ -114,7 +114,7 @@ kill_pan() {
 ## Buffers management
 
 save_buffer() {
-	TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+	TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}" "local")"
     [[ ! -e "${TMUX_BUF}" ]] && (touch "${TMUX_BUF}";)
 	tmux saveb "${TMUX_BUF}"
 }
@@ -123,7 +123,7 @@ save_buffer() {
 set_buffer_data() {
 	data="$1"
 	TMUX_BUF="$2"
-	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}" "local")"
 	
 	tmux set-buffer -b "${TMUX_BUF}" "$data"
 }
@@ -131,7 +131,7 @@ set_buffer_data() {
 
 clean_buffer_data() {
 	TMUX_BUF="$1"
-	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}" "local")"
 	
 	tmux set-buffer -b "$TMUX_BUF" " "
 }
@@ -139,14 +139,13 @@ clean_buffer_data() {
 
 get_buffer_cmd() {
 	TMUX_BUF="$1"
-	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+	[ -z "${TMUX_BUF}" ] && TMUX_BUF="$(get_tmux_option "${QUICKFIX_BUFFER}" "local")"
 	tmux show-buffer -b "$TMUX_BUF"
 }
 
 
 get_current_buffer_cmd() {
 	tmux show-buffer
-	#tmux delete-buffer
 }
 
 
@@ -162,19 +161,10 @@ quickfix_join_pane() {
 }
 
 
-quickfix_key() {
-	get_tmux_option "$QFX_OPTION" "$QFX_KEY"
-}
-
-
 quickfix_position() {
-	get_tmux_option "$QUICKFIX_POSITION" "$QUICKFIX_DEFAULT_POSITION"
+	get_tmux_option "${QUICKFIX_POSITION}" "local"
 }
 
-
-quickfix_height() {
-	get_tmux_option "$QUICKFIX_HEIGHT_OPTION" "$QUICKFIX_DEFAULAT_HEIGHT"
-}
 
 ### QUEUE AND PROCESSES HANDLING SECTION ###
 
@@ -219,37 +209,36 @@ quick_process_tree() {
 
 
 quickfix_command_enqueue() {
-	#echo "ENQUEUE"
 	cmd="$1"
 	queue="$2"
-	#queue="$(get_tmux_option "$QUICKFIX_COMMAND_QUEUE")"
 	if [ -n "$queue" ]; then
 		echo "$cmd" >> "${queue}"
-	#else
-	#	echo "$cmd" >> "${QUICKFIX_DEFAULT_CMD_QUEUE}"
 	fi
 }
 
 
 gen_multi_queue() {
-	if [ -z "$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}")" ]; then
+	if [ -z "$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "local")" ]; then
 		qf=$(mktemp "${QUICKFIX_CMD_QUEUE_BASENAME}".XXX$RANDOM)
-		set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${qf}"
+		set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${qf}" "local"
 	fi
 }
 
 gen_queue() {
-	files=(/${QUEUE_HOME}/*)
-	if [ ${#files[@]} -eq 0 ]; then
-		touch "${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}"
-	fi
-	set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${QUICKFIX_CMD_QUEUE_BASENAME}"
+	local session_name="$1"
+	#files=(/${QUEUE_HOME}/*)
+	#if [ ${#files[@]} -eq 0 ]; then
+	touch "${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}.$session_name"
+	set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${QUICKFIX_CMD_QUEUE_BASENAME}.$session_name" "$session_name" "local"
 
 }
 
-# TODO: Review this function because when is in queue mode,
-# if no command is in the queue, it goes to the else [ that is 
-# used just for the direct mode ]
+gen_buffer() {
+	local session_name="$1"
+	set_tmux_option "${QUICKFIX_BUFFER}" "${QUICKFIX_DEFAULT_BUFFER_NAME}.$session_name" "$session_name" "local"
+}
+
+
 exec_cmd() {
 	local cmd
 	local pane_id
@@ -259,13 +248,12 @@ exec_cmd() {
 	pane_id="$2"
 	mode="$3"
 
-	buffer="$(get_tmux_option "${QUICKFIX_BUFFER}")"
 
 	case "$mode" in
 		"direct")
+			buffer="$(get_tmux_option "${QUICKFIX_BUFFER}")"
 			if [ -n "$buffer" ]; then
 				# Use the default buffer specified in the options
-				quickfix_code_debug "[EXEC] $buffer"
 				tmux send-keys -t "$pane_id" "$(get_buffer_cmd "$buffer")" Enter;
 				clean_buffer_data
 			else
@@ -275,7 +263,9 @@ exec_cmd() {
 			;;
 			
 		"queue") 
-			[ -n "$cmd" ] && tmux send-keys -t "$pane_id" "$cmd" Enter;
+			if [ -n "$cmd" ]; then
+				tmux send-keys -t "$pane_id" "$cmd" Enter;
+			fi
 			;;
 		"default") 
 			tmux display-message "Error executing command";
@@ -300,5 +290,5 @@ quickfix_code_debug() {
 	timestamp="$(date +%T)"
 	function_caller="${FUNCNAME[1]}"
 	
-	echo "$timestamp - $function_caller - $msg " >> "$HOME"/"$target"
+	echo "$timestamp - $function_caller - $msg " >> "$target"
 }

@@ -13,9 +13,10 @@ META_OPTIONS=(
 	"${QUICKFIX_POSITION}:${QUICKFIX_DEFAULT_POSITION}"
 	"${QUICKFIX_PERC_OPTION}:${QUICKFIX_DEFAULT_PERC_SIZE}"
 	"${QUICKFIX_COMMAND_INPUT}:${QUICKFIX_DEFAULT_CMD_INPUT}"
-	"${QUICKFIX_DEBUG_MODE}:${QUICKFIX_DEBUG_VALUE}"
-	"${QUICKFIX_COMMAND_QUEUE}:${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}"
-	"${QUICKFIX_BUFFER}:${QUICKFIX_DEFAULT_BUFFER_NAME}"
+	"${QUICKFIX_BUFFER_RESERVED}:${QUICKFIX_DEFAULT_BUFFER_RESERVED}"
+	
+	#"${QUICKFIX_COMMAND_QUEUE}:${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}"
+	#"${QUICKFIX_BUFFER}:${QUICKFIX_DEFAULT_BUFFER_NAME}"
 )
 
 register_qfix_options() {
@@ -29,7 +30,7 @@ register_qfix_options() {
 	for option in "${META_OPTIONS[@]}"; do
 		key="${option%%:*}"
 		value="${option##*:}"
-		set_tmux_option "$key" "$value"
+		set_tmux_option "$key" "$value" "global"
 	done
 
 	tmux bind-key "${quickfix_key}" run-shell "${quickfix_command}"
