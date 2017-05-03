@@ -3,15 +3,14 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 QUEUE_HOME="$CURRENT_DIR/../queue"
 
 get_tmux_option() {
-	local option=$1
-	#local default_value=$2
-	#local option_value=$(tmux show-option -sqv "$option")
+	local option="$1"
+	#local default_value="$2"
 	local scope="$2"
 	local option_value
 	
-	if [ "$scope" = "local" ]; then
+	if [ "$scope" = "local" ]; then 
 		option_value=$(tmux show-option -qv "$option")
-	else
+	else	
 		option_value=$(tmux show-option -gqv "$option")
 	fi
 
@@ -28,15 +27,16 @@ set_tmux_id() {
 
 
 set_tmux_option() {
-	local option="$1"
-	local value="$2"
-	local session="$3"
+	local option=$1
+	local value=$2
+	local session=$3
 	local scope="$4"
-
-	if [ "$scope" = "local" ]; then
+	#tmux set-option -sq  -t "$session" "$option" "$value"
+	if [ "$scope" = "local" ]; then 
 		tmux set-option -q  -t "$session" "$option" "$value"
+		echo "[SETTING $option=$value for Session $session" >> quickfix.log
 	else
-		tmux set-option -gq "$option" "$value"
+		tmux set-option -gq  "$option" "$value"
 	fi
 
 }
@@ -162,7 +162,7 @@ quickfix_join_pane() {
 
 
 quickfix_position() {
-	get_tmux_option "${QUICKFIX_POSITION}" "local"
+	get_tmux_option "${QUICKFIX_POSITION}" "global"
 }
 
 
@@ -230,8 +230,14 @@ gen_queue() {
 	#if [ ${#files[@]} -eq 0 ]; then
 	touch "${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}.$session_name"
 	set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${QUICKFIX_CMD_QUEUE_BASENAME}.$session_name" "$session_name" "local"
-
 }
+
+
+gen_buffer() {
+	local session_name="$1"
+	set_tmux_option "${QUICKFIX_BUFFER}" "${QUICKFIX_DEFAULT_BUFFER_NAME}.$session_name" "$session_name" "local"
+}
+
 
 gen_buffer() {
 	local session_name="$1"
@@ -251,7 +257,7 @@ exec_cmd() {
 
 	case "$mode" in
 		"direct")
-			buffer="$(get_tmux_option "${QUICKFIX_BUFFER}")"
+			buffer="$(get_tmux_option "${QUICKFIX_BUFFER}" "local")"
 			if [ -n "$buffer" ]; then
 				# Use the default buffer specified in the options
 				tmux send-keys -t "$pane_id" "$(get_buffer_cmd "$buffer")" Enter;

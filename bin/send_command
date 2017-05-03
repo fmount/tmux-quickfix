@@ -35,7 +35,7 @@ send_cmd() {
 		"direct")
 			# Clear the buffer to remove old commands
 			if [ -n "$buffer" ]; then
-
+				
 				set_buffer_data "$(get_current_buffer_cmd)" "$buffer"
 			fi
 			tmux display-message "Command sent to quickfix"
