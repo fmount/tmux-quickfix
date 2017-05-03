@@ -44,7 +44,7 @@ run_dequeuer() {
 
 kill_queuer() {
 	if [ -f "${PID_LOCK}" ]; then
-		PID="$(head -n1 $PID_LOCK)"
+		PID="$(head -n1 "${PID_LOCK}")"
 		kill -15 "${PID}"
 		rm "${PID_LOCK}"
 	fi
@@ -62,15 +62,26 @@ check_tmux_user_session() {
 }
 
 
+#TODO: Check if another run_queuer is already running, verify the PID, kill it and relaunch a new
+# fresh process
+
 main() {
 	session="$1"
 	pane_id="$2"
 	main_pid="$3"
 	tmux_queue="$4"
+	#if [ ! -s "${PID_LOCK}" ]; then
+	kill_queuer
 	eval run_dequeuer "$session" "$pane_id" "$main_pid" "$tmux_queue" & > /dev/null
 	PID="$!"
 	echo "${PID}" > $PID_LOCK
 	quickfix_code_debug "[MAIN PID] ${PID} "
+	#else
+	#	quickfix_code_debug "[ERROR] .lock exists "
+	#	kill_queuer
+	#	quickfix_code_debug "[ERROR] KILL QUEUER "
+	#	eval run_dequeuer "$session" "$pane_id" "$main_pid" "$tmux_queue" & > /dev/null
+	#fi
 }
 
 main "$@"
