@@ -6,7 +6,7 @@ QUICKFIX_HEIGHT_OPTION="@quickfix-height"
 QUICKFIX_PERC_OPTION="@quickfix-perc-size"
 REGISTERED_PANE_PREFIX="@quickfix-registered-pane"
 QUICKFIX_COMMAND_QUEUE="@quickfix-cmd-queue"
-QUICKFIX_COMMAND_INPUT="@quickfix-cmd-input"
+QUICKFIX_COMMAND_INPUT="@quickfix-cmd-input" # Global parameter
 QUICKFIX_BUFFER="@quickfix-buffer"
 QUICKFIX_BUFFER_RESERVED="@quickfix-buffer-reserved"
 

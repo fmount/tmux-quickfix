@@ -13,7 +13,7 @@ PANE_CURRENT_PATH="$(pwd)"
 
 quickfix_exists() {
 	local var
-	var="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "")"
+	var="$(get_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "local")"
 	[ -n "$var" ]
 }
 
@@ -199,7 +199,7 @@ send_front(){
 		quickfix_join_pane "$size"
 	else
 		# Cannot find quickfix win: update meta and redraw
-		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}"
+		unset_tmux_option "${REGISTERED_QUICKFIX_PREFIX}" "local"
 		create_quickfix "$position" "$mode" #"$cmd"
 	fi
 }
@@ -227,9 +227,9 @@ bootstrap() {
 	buffered="$1"
 	mode="$2"
 
-	case $mode in 
+	case $mode in
 		"direct")
-			[ "$buffered" = "yes" ] && (gen_buffer "$session")
+			[  "$buffered" = "yes" ] && (gen_buffer "$session")
 			;;
 		"queue")
 			[ ! -f "$QUEUE_HOME/${QUICKFIX_CMD_QUEUE_BASENAME}.$session" ] && (gen_queue "$session")
@@ -239,10 +239,10 @@ bootstrap() {
 }
 
 main(){
-	mode="$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}" "global")"
-
+	mode=$(get_tmux_option "${QUICKFIX_COMMAND_INPUT}" "global")
+	
 	bootstrap "$(get_tmux_option "${QUICKFIX_BUFFER_RESERVED}" "global")" "$mode"
-
+	
 	toggle_quickfix "$mode"
 }
 main
