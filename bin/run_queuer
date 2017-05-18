@@ -10,7 +10,7 @@ source "$QUICK_HOME/engine.sh"
 source "$QUICK_HOME/session.sh"
 
 POLLING_TIMEOUT=10
-PID_LOCK="$QUICK_HOME/../run_queuer.lock"
+PID_LOCK="$CURRENT_DIR/../run_queuer.lock"
 
 
 have_child() {
@@ -44,9 +44,9 @@ run_dequeuer() {
 
 kill_queuer() {
 	if [ -f "${PID_LOCK}" ]; then
-		PID="$(head -n1 $PID_LOCK)"
-		kill -15 "${PID}"
+		PID="$(head -n1 "$PID_LOCK")"
 		rm "${PID_LOCK}"
+		kill -15 "${PID}"
 	fi
 }
 
@@ -67,6 +67,9 @@ main() {
 	pane_id="$2"
 	main_pid="$3"
 	tmux_queue="$4"
+	
+	#Kill queuer if a queue process exists
+	kill_queuer
 	eval run_dequeuer "$session" "$pane_id" "$main_pid" "$tmux_queue" & > /dev/null
 	PID="$!"
 	echo "${PID}" > $PID_LOCK

@@ -11,15 +11,19 @@ environment, or you can simply overwrite these parameters inside the active tmux
 
     set -g @quickfix-position 'top'
 
-> I don't like the default 'prefix + z' key binding. Can I change it to be 'prefix + e'?
-
-    set -g @quickfix-key 'e'
-
 
 > I don't like working with percentual size, I'd like to specify the absolute height of the pane!
 
     set -g @quickfix-height '30'
 
+
+> I just want to change some config specific parameters: how??
+    
+    ~/.tmux/plugins/tmux-quickfix/script/variables.sh
+
+In the section "Default options" you can change one or more options according to your preferences
+(TODO: a global runtime config for these options)
+We recommend to fully read the provided README to better understand the meaning of each parameter.
 
 ### Notes
 

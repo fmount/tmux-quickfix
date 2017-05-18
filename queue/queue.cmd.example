@@ -1,0 +1,5 @@
+ls -l
+cat queue.cmd
+echo "hello"
+for i in $(ls);do echo $i; sleep 2; done
+date +%H:%m:%s 

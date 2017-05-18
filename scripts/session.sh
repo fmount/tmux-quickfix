@@ -20,6 +20,6 @@ get_current_session() {
 
 session_exists() {
 	s_target="$1"
-	t_target="$(tmux list-session | grep "$s_target" | cut -d ':' -f1)"
+	t_target="$(tmux list-session | grep "$s_target": | cut -d ':' -f1)"
 	[ "$s_target" = "$t_target" ] && return 0 || return 1
 }

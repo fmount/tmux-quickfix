@@ -22,7 +22,11 @@ send_cmd() {
 		"queue")
 			tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "local")"
 
-			[[ ! -e "$tmux_queue" ]] && (gen_queue; tmux display-message "TMUX queue ($tmux_queue) created.")
+			[[ ! -e "$tmux_queue" ]] && (
+				gen_queue "$(get_current_session)"; 
+				tmux display-message "TMUX queue ($tmux_queue) created.";
+				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "local")" 
+			)
 			
 			if [ -n "$buffer" ]; then
 				# Enqueue the command from the specified buffer reserved for quickfix plugin
@@ -33,10 +37,13 @@ send_cmd() {
 			;;
 		
 		"direct")
+
 			# Clear the buffer to remove old commands
 			if [ -n "$buffer" ]; then
-
 				set_buffer_data "$(get_current_buffer_cmd)" "$buffer"
+			else
+				# Send command to the default buffer because it has not been initialized yet :/
+				set_buffer_data "$(get_current_buffer_cmd)" "${QUICKFIX_DEFAULT_BUFFER_NAME}.$(get_current_session)"
 			fi
 			tmux display-message "Command sent to quickfix"
 	  		;;

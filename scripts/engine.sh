@@ -229,7 +229,7 @@ gen_queue() {
 	#files=(/${QUEUE_HOME}/*)
 	#if [ ${#files[@]} -eq 0 ]; then
 	touch "${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}.$session_name"
-	set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${QUICKFIX_CMD_QUEUE_BASENAME}.$session_name" "$session_name" "local"
+	set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${QUEUE_HOME}"/"${QUICKFIX_CMD_QUEUE_BASENAME}.$session_name" "$session_name" "local"
 
 }
 
@@ -285,8 +285,7 @@ quickfix_cmd_dequeue() {
 quickfix_code_debug() {
 	msg="$1"
 	
-	#target="${QUICKFIX_DEBUG_LOG}"
-	target="$HOME/quickfix-plugin.log"
+	target="${QUICKFIX_DEBUG_LOG}"
 	timestamp="$(date +%T)"
 	function_caller="${FUNCNAME[1]}"
 	
