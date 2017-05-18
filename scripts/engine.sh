@@ -1,6 +1,9 @@
 #source "/home/fmount/git/tmux-quickfix/scripts/session.sh"
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 QUEUE_HOME="$CURRENT_DIR/../queue"
+
+source "$CURRENT_DIR/variables.sh"
+
 LOG="$CURRENT_DIR/../log"
 
 get_tmux_option() {
