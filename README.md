@@ -163,7 +163,7 @@ The default key to send commands is **[prefix]+a**:
         tmux bind-key a run-shell /path/to/quickfix/scripts/bin/send_command
 
 
-Enqueue/Dequeue commands (queue mode)
+The queue mode
 ----
 
 In my opinion this is the most interesting section because the _queue mode_ represent the designed
@@ -208,7 +208,7 @@ in a safe way as described in the [The run_queuer job](#run_queuer_section) sect
 
 
 
-The run_queuer job
+The dequeue job
 ----
 
 A direct consequence of the queue mode is the job that performs the dequeue operation on the shared
@@ -239,7 +239,7 @@ process that is up and running with these constraints
    resource.
 
 
-Direct mode (the LIFO way)
+Direct mode
 ----
 
 The direct mode is the default for this plugin. As described above, users can enter copy mode and
