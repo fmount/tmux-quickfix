@@ -26,7 +26,7 @@ QUICKFIX_DEFAULT_WIN_INDEX=42
 QUICKFIX_CMD_QUEUE_BASENAME="queue.cmd"
 QUICKFIX_DEFAULT_CMD_INPUT="direct" # Allowed values: [direct|queue]
 #QUICKFIX_DEFAULT_CMD_INPUT="queue" # Allowed values: [direct|queue]
-QUICKFIX_DEFAULT_BUFFER_RESERVED="yes" # Allowed values: [yes|no]
+QUICKFIX_DEFAULT_BUFFER_RESERVED="no" # Allowed values: [yes|no]
 QUICKFIX_DEFAULT_BUFFER_NAME="tmbuf"
 
 QUICKFIX_DEBUG_LOG="$HOME/quickfix-plugin.log"
