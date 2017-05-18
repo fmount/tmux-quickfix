@@ -29,5 +29,5 @@ QUICKFIX_DEFAULT_CMD_INPUT="direct" # Allowed values: [direct|queue]
 QUICKFIX_DEFAULT_BUFFER_RESERVED="no" # Allowed values: [yes|no]
 QUICKFIX_DEFAULT_BUFFER_NAME="tmbuf"
 
-QUICKFIX_DEBUG_LOG="$HOME/quickfix-plugin.log"
+QUICKFIX_DEBUG_LOG="quickfix-plugin.log"
 TMUX_VERSION_ALLOWED="2.2"

@@ -24,8 +24,6 @@ send_cmd() {
 
 			[[ ! -e "$tmux_queue" ]] && (
 				gen_queue "$(get_current_session)"; 
-				tmux display-message "TMUX queue ($tmux_queue) created.";
-				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "local")" 
 			)
 			
 			if [ -n "$buffer" ]; then
@@ -33,7 +31,9 @@ send_cmd() {
 				quickfix_command_enqueue "$(get_buffer_cmd "$buffer")" "$tmux_queue"
 			else
 				quickfix_command_enqueue "$(get_current_buffer_cmd)" "$tmux_queue"
+				tmux_queue="$(get_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "local")" 
 			fi
+			tmux display-message "Command enqueued"
 			;;
 		
 		"direct")

@@ -1,6 +1,7 @@
 #source "/home/fmount/git/tmux-quickfix/scripts/session.sh"
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 QUEUE_HOME="$CURRENT_DIR/../queue"
+LOG="$CURRENT_DIR/../log"
 
 get_tmux_option() {
 	local option="$1"
@@ -291,7 +292,7 @@ quickfix_cmd_dequeue() {
 quickfix_code_debug() {
 	msg="$1"
 	
-	target="${QUICKFIX_DEBUG_LOG}"
+	target="$LOG/${QUICKFIX_DEBUG_LOG}"
 	timestamp="$(date +%T)"
 	function_caller="${FUNCNAME[1]}"
 	
