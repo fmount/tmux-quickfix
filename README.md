@@ -9,15 +9,15 @@ This plugin allow tmux to have a hidden pane on the current session and use it t
 
 - [Tmux quickfix plugin - Intro](#)
 - [Configurable parameters](#configurable-parameters)
-- [Manual Install](#)
+- [Manual Install](#manual-install)
 - [Install using tpm](#install-using-tpm)
 - [Test direct method](#test-direct-method)
 - [Test queue method](#test-queue-method)
 - [Sending commands](#sending-commands)
-- [Enqueue/Dequeue commands (queue mode)](#enqueue-dequeue)
-- [The run_queuer job](#run-queuer)
-- [Direct mode (the LIFO way)](#direct-mode)
-- [Direct mode with reserved buffer](#direct-mode-reserved)
+- [The queue mode](#the-queue-mode)
+- [The dequeue job](#the-dequeue-job)
+- [Direct mode](#direct-mode)
+- [Direct mode with reserved buffer](#direct-mode-with-reserved-buffer)
 - [Debug mode](#debug-mode)
 - [Conclusion](#conclusion)
 - [License](#license)
@@ -289,7 +289,7 @@ the **send-to-execute** cycle of a specified command with the following steps:
 
 2. Toggle the quickfix window to enable the execution of the command when it goes on foreground.
 
-Just do it following the [Test Direct method](#test the direct method) section.
+Just do it following the Test Direct method section.
 
 
 Debug mode
@@ -329,4 +329,4 @@ TODO
 
 License
 ---
-[MIT](License.md)
+[MIT](License)
