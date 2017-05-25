@@ -228,6 +228,7 @@ gen_multi_queue() {
 	fi
 }
 
+
 gen_queue() {
 	local session_name="$1"
 	#files=(/${QUEUE_HOME}/*)
@@ -277,6 +278,17 @@ exec_cmd() {
 				tmux send-keys -t "$pane_id" "$cmd" Enter;
 			fi
 			;;
+
+		"make")
+			
+			if [ -n "${QUICKFIX_PROJECT}" ] && [ -n "${QUICKFIX_MAKE_CMD}" ]; then
+				tmux send-keys -t "$pane_id" "cd ${QUICKFIX_PROJECT}" Enter;
+				tmux send-keys -t "$pane_id" "${QUICKFIX_MAKE_CMD}" Enter;
+			else
+				tmux display-message "Undefined project:make_cmd parameters"
+			fi
+			;;
+
 		"default") 
 			tmux display-message "Error executing command";
 			;;

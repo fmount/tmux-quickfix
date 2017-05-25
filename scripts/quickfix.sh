@@ -235,6 +235,9 @@ bootstrap() {
 			[ ! -f "$QUEUE_HOME/${QUICKFIX_CMD_QUEUE_BASENAME}.$session" ] && (gen_queue "$session")
 			set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}.$session" "$session" "local"
 			;;
+		"make")
+			tmux display-message "MAKE MODE COMING SOON ..."
+			;;
 	esac
 }
 
