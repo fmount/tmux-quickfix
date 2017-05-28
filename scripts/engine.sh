@@ -165,6 +165,10 @@ quickfix_join_pane() {
 }
 
 
+quickfix_get_current_path() {
+	tmux display-message -p "#{pane_current_path}"
+}
+
 quickfix_position() {
 	get_tmux_option "${QUICKFIX_POSITION}" "global"
 }
@@ -280,10 +284,11 @@ exec_cmd() {
 			;;
 
 		"make")
-			
-			if [ -n "${QUICKFIX_PROJECT}" ] && [ -n "${QUICKFIX_MAKE_CMD}" ]; then
-				tmux send-keys -t "$pane_id" "cd ${QUICKFIX_PROJECT}" Enter;
-				tmux send-keys -t "$pane_id" "${QUICKFIX_MAKE_CMD}" Enter;
+			prj="$(get_tmux_option "${QUICKFIX_PROJECT}" "local")"
+			mk="$(get_tmux_option "${QUICKFIX_MAKE}" "local")"
+
+			if [ -n "${prj}" ] && [ -n "${mk}" ]; then
+				tmux send-keys -t "$pane_id" "${mk}" Enter;
 			else
 				tmux display-message "Undefined project:make_cmd parameters"
 			fi

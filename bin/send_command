@@ -15,7 +15,7 @@ send_cmd() {
 	# if the method is direct, copy the command to the quickfix designed buffer,
 	# if instead method is queue, we enqueue the command to the designed queue
 
-	input_type="$1" #direct or queue
+	input_type="$1" #direct or queue or make
 	
 	buffer="$(get_tmux_option "${QUICKFIX_BUFFER}" "local")"
 	case $input_type in
@@ -47,6 +47,13 @@ send_cmd() {
 			fi
 			tmux display-message "Command sent to quickfix"
 	  		;;
+		"make")
+			# Get the command from the current buffer and set it on metadata
+			#set_buffer_data "$(get_current_buffer_cmd)" "$buffer"
+			set_tmux_option "${QUICKFIX_MAKE}" "$(get_current_buffer_cmd)" "$(get_current_session)" "local"
+			#set_tmux_option "${QUICKFIX_PROJECT}" "$(pwd)" "$(get_current_session)" "local"
+			tmux display-message "Make command ready"
+			;;
 
 		*)
 			tmux display-message "tmux-quickfix unsupported input method"

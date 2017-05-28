@@ -8,7 +8,8 @@ source "$CURRENT_DIR/engine.sh"
 source "$CURRENT_DIR/variables.sh"
 source "$CURRENT_DIR/session.sh"
 
-PANE_CURRENT_PATH="$(pwd)"
+
+#PANE_CURRENT_PATH="$(pwd)"
 
 
 quickfix_exists() {
@@ -87,15 +88,16 @@ split_qfix() {
 
 	[ ! -n "$qfix_size" ] && qfix_size="${QUICKFIX_DEFAULT_PERC_SIZE}"
 	
-	local mode="$2" # direct / queue
+	
+	local mode="$2" # direct / queue / make
 	#local cmd="$3"	
-
+	
 	case $1 in
 		"bottom")
 			info="$(tmux new-window -c "$PANE_CURRENT_PATH" -n quickfix -P -F "#{window_index}:#{window_id}:#{pane_id}")"
 			pane_id=$(echo "$info" | cut -d ':' -f3)
 			tmux select-window -l
-			if [ "$mode" == "direct" ]; then
+			if [[ "$mode" == "direct" || "$mode" == "make" ]]; then
 				tmux join-pane -v -l "$qfix_size" -s "$pane_id"
 				exec_cmd "" "$pane_id" "$mode"
 			else
@@ -164,7 +166,7 @@ quickfix_is_fore() {
 
 send_back() {
 	win_index=$(get_qfix_id_by 'default')
-	local mode="$1" # direct / queue
+	local mode="$1" # direct / queue / make
 
 	tmux break-pane -d -t "${win_index}" -s "$(get_qfix_id_by 'pane_id')"
 	
@@ -175,7 +177,7 @@ send_back() {
 	quick_meta="$(get_window_info "${win_index}")"
 	update_quickfix_meta "$quick_meta"
 	
-	if [ ! "$(check_process)" ] && [ "$mode" == "direct" ]; then 
+	if [ ! "$(check_process)" ] && [[ "$mode" == "direct" || "$mode" == "make" ]]; then 
 		kill_quickfix "pane"
 	#else
 	#	echo "Cannot kill"
@@ -236,7 +238,13 @@ bootstrap() {
 			set_tmux_option "${QUICKFIX_COMMAND_QUEUE}" "${QUEUE_HOME}/${QUICKFIX_CMD_QUEUE_BASENAME}.$session" "$session" "local"
 			;;
 		"make")
-			tmux display-message "MAKE MODE COMING SOON ..."
+			prj="$(get_tmux_option "${QUICKFIX_PROJECT}" "local")"
+
+			if [ -z "${prj}" ]; then
+				QUICKFIX_TARGET_PROJECT="$(quickfix_get_current_path)"
+				set_tmux_option "${QUICKFIX_PROJECT}" "${QUICKFIX_TARGET_PROJECT}" "$session" "local"
+			fi
+			PANE_CURRENT_PATH="$(get_tmux_option "${QUICKFIX_PROJECT}" "local")"
 			;;
 	esac
 }
