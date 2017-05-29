@@ -320,7 +320,7 @@ users can obtain the desidered behaviour related to the category of their projec
 An example is show by the following video.
 
 
-[![asciicast](https://asciinema.org/a/arg8rk97mptlp6qlkoz3zkf13.png)](https://asciinema.org/a/arg8rk97mptlp6qlkoz3zkf13?autoplay=1)
+[![asciicast](https://asciinema.org/a/bn8holc9f3ic21k8f83yppqm5.png)](https://asciinema.org/a/arg8rk97mptlp6qlkoz3zkf13?autoplay=1)
 
 
 
