@@ -18,6 +18,7 @@ This plugin allow tmux to have a hidden pane on the current session and use it t
 - [The dequeue job](#the-dequeue-job)
 - [Direct mode](#direct-mode)
 - [Direct mode with reserved buffer](#direct-mode-with-reserved-buffer)
+- [Make mode](#make-mode)
 - [Debug mode](#debug-mode)
 - [Conclusion](#conclusion)
 - [License](#license)
@@ -290,6 +291,37 @@ the **send-to-execute** cycle of a specified command with the following steps:
 2. Toggle the quickfix window to enable the execution of the command when it goes on foreground.
 
 Just do it following the Test Direct method section.
+
+
+Make mode
+---
+
+Make mode is the new feature came in this plugin on commit [a96ed3c84c](https://github.com/fmount/tmux-quickfix/commit/a96ed3c84ccce81c427a77e1968f3aa0dad030ce)
+It's an extension of the previous features, but is also built on two main components:
+
+1. **Project**: it represents the target dir on which we can execute commands; to make this variable
+   available on the system, it has been registered in the metadata environment (defined locally for each session) 
+   as **@quickfix-project**
+
+2. **Make command**: as described for the project variable, this is just the command to be executed 
+   on project target dir. It is defined as **@quickfix-make** and users can change its value according
+   to the kind of project they're working on.
+
+This is a new mode of work and as usual, metatada are setted up and queried on every new execution.
+Modifying these values:
+
+    tmux set-option @quickfix-project "/target/dir/"
+
+and
+
+    tmux set-option @quickfix-make "make command"
+
+users can obtain the desidered behaviour related to the category of their project. 
+An example is show by the following video.
+
+
+[![asciicast](https://asciinema.org/a/arg8rk97mptlp6qlkoz3zkf13.png)](https://asciinema.org/a/arg8rk97mptlp6qlkoz3zkf13?autoplay=1)
+
 
 
 Debug mode
